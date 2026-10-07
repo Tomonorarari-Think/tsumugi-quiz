@@ -1,0 +1,114 @@
+{
+  "$schemaNote": "春日部つむぎ公式立ち絵 v2.0 の PSD から表情差分を書き出すためのレイヤー対応表（issue #86、場面ごとの表情は #212）。scripts/generate_tsumugi_expressions.py が読む。素材そのものは含まない（レイヤー名だけの設定ファイル）。自分で差し替える場合は External/tsumugi/expressions.json にコピーして編集する（そちらが優先される）。",
+  "psd": {
+    "expectedWidth": 2037,
+    "expectedHeight": 4084,
+    "note": "春日部つむぎ立ち絵_公式_v2.0.psd の実測値（psd-tools 1.19.0、2026-09-18）。異なる版の PSD を渡すと警告が出る。"
+  },
+  "safety": {
+    "forbiddenGroups": ["私服"],
+    "requiredVisibleGroups": ["!体部分", "制服"],
+    "note": "readme.txt の禁止事項『服を脱がせた状態での利用は厳禁です。着せ替え差分作成時のみご利用ください。』に触れないための検証。ここに書いた値は generate_tsumugi_expressions.py の BUILTIN_FORBIDDEN_GROUPS / BUILTIN_REQUIRED_VISIBLE_GROUPS と union されるため、追加はできても削除はできない（このセクションを丸ごと省いても同じ検証が走る）。また layers に書けるグループは ALLOWED_EXPRESSION_GROUPS（!口 / !目 / !眉 / !アクセサリー）に固定されており、!体部分 / 制服 / 私服 は指定できない。docs/licenses.md §3.1 を参照。"
+  },
+  "expressions": [
+    {
+      "key": "idle",
+      "fileName": "tsumugi_idle.png",
+      "description": "待機（PSD の既定表示と同じ組み合わせ）",
+      "layers": {
+        "!口": ["*ω"],
+        "!目": ["*普通"],
+        "!眉": ["*普通"],
+        "!アクセサリー": ["ホクロ"]
+      }
+    },
+    {
+      "key": "reading",
+      "fileName": "tsumugi_reading.png",
+      "description": "読み上げ中（口を開けた状態）",
+      "layers": {
+        "!口": ["*あ"],
+        "!目": ["*普通"],
+        "!眉": ["*普通"],
+        "!アクセサリー": ["ホクロ"]
+      }
+    },
+    {
+      "key": "buzz_self",
+      "fileName": "tsumugi_buzz_self.png",
+      "description": "自分が回答権を得た（はっとする、#212）",
+      "layers": {
+        "!口": ["*わ"],
+        "!目": ["*見開く"],
+        "!眉": ["*普通"],
+        "!アクセサリー": ["ホクロ", "！"]
+      }
+    },
+    {
+      "key": "buzz_other",
+      "fileName": "tsumugi_buzz_other.png",
+      "description": "他の参加者が回答権を得た（横目で見守る、#212）",
+      "layers": {
+        "!口": ["*お"],
+        "!目": ["*普通（横目）"],
+        "!眉": ["*真面目"],
+        "!アクセサリー": ["ホクロ"]
+      }
+    },
+    {
+      "key": "wrong_moment",
+      "fileName": "tsumugi_wrong_moment.png",
+      "description": "誤答の瞬間（がーん、#212）",
+      "layers": {
+        "!口": ["*え"],
+        "!目": ["*瞳小"],
+        "!眉": ["*困る"],
+        "!アクセサリー": ["ホクロ", "がーん", "汗２"]
+      }
+    },
+    {
+      "key": "correct",
+      "fileName": "tsumugi_correct.png",
+      "description": "正解（目を閉じた笑顔・ほっぺ赤）",
+      "layers": {
+        "!口": ["*わあ！"],
+        "!目": ["*笑う"],
+        "!眉": ["*普通"],
+        "!アクセサリー": ["ホクロ", "ほっぺ赤"]
+      }
+    },
+    {
+      "key": "wrong",
+      "fileName": "tsumugi_wrong.png",
+      "description": "不正解の確定（＞＜で悔しがる、#212 で変更）",
+      "layers": {
+        "!口": ["*綴じ　ギザギザ"],
+        "!目": ["*＞＜"],
+        "!眉": ["*困る"],
+        "!アクセサリー": ["ホクロ", "汗１"]
+      }
+    },
+    {
+      "key": "timeout",
+      "fileName": "tsumugi_timeout.png",
+      "description": "時間切れ（どんより、#212。#86 の不正解の組み合わせを移したもの）",
+      "layers": {
+        "!口": ["*綴じ　へ"],
+        "!目": ["*ジト目"],
+        "!眉": ["*困る"],
+        "!アクセサリー": ["ホクロ", "汗１", "どんより"]
+      }
+    },
+    {
+      "key": "no_eligible",
+      "fileName": "tsumugi_no_eligible.png",
+      "description": "回答できる人がいない（きょとん、#212）",
+      "layers": {
+        "!口": ["*う"],
+        "!目": ["*普通"],
+        "!眉": ["*ん？"],
+        "!アクセサリー": ["ホクロ", "？"]
+      }
+    }
+  ]
+}

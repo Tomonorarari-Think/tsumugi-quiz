@@ -1,0 +1,571 @@
+/*
+ * theme-views-game.uss — Game 画面と立ち絵（CharacterView）のスタイル
+ *
+ * デザイントークン（--color-* / --spacing-* / --font-size-* / --radius-*）と
+ * 共通コントロール（Button / TextField / Toggle ほか）のスタイルは theme.uss にある。
+ * 本ファイルは theme.uss の後に読み込むこと（tsumugi-theme.tss の @import 順と、
+ * 各 UXML の <Style> の並び）。
+ *
+ * #132 レビュー M-4: 1 ファイル 800 行以内を保つため、画面ドメインごとに
+ * theme-views-<ドメイン>.uss へ分割している（EditMode テスト ThemePaletteTests が
+ * Styles/ 配下の全 .uss の行数を検証する）。
+ *
+ * 画面固有のボタンは `.unity-button.<クラス>`（詳細度 0,2,0）で書き、theme.uss の
+ * `.unity-button`（0,1,0）に読み込み順に依存せず勝てるようにする。
+ */
+
+/* ---------------------------------------------------------------------------
+   Game View（issue #14）
+   #113: host-setup-root と同じ作法で screen-root を併用する（UXML 側で
+   class="screen-root game-root" とする）。
+   #193: 3 列レイアウト（左 = 参加者パネル / 中央 = 画像 + 問題・解答 / 右 = 立ち絵）。
+   列幅・縦幅の見積りと実測は docs/architecture.md §10.2。
+   --------------------------------------------------------------------------- */
+
+.game-root {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+/* #193: 3 列を横に並べる行。作業領域（.screen-root の内側）の幅・高さいっぱいに広げ、
+   左右の列を縦長にする。中央列が最大幅（880px）に達したときは、並んでいる列ごと中央に寄せる
+   （justify-content: center。立ち絵なしは左列 + 中央列、21:9 の立ち絵ありは 3 列。#213。
+   16:9・900x750 の立ち絵ありは中央列が最大幅に届かず残りを埋めるので影響しない）。
+   #187: 作業領域より高くならないようにする（足りない分は game-content-main の中の
+   .game-scroll-view だけが縮んで吸収する）。 */
+.game-content-row {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    width: 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+/* #193: 中央列。左右の列の残りの幅を使うが、立ち絵の有無にかかわらず 880px で頭打ちにする（#213）。
+   上限なしだと立ち絵なしで 16:9 1215px・21:9 1449px、立ち絵ありでも 21:9 で 994px まで伸び、
+   問題文（24px）の 1 行が全角 40〜60 字になって読みにくい（21:9 は画像の高さが上限に当たるので、
+   中央を広げても画像は大きくならない）。880px は立ち絵ありの 16:9 の中央列（799px、問題文の行幅は
+   全角約 32 字）と同程度の行長（行幅 848px、全角約 35 字）に抑えた値。16:9（799px）・900x750（632px）の
+   立ち絵ありでは届かないので効かない（docs/architecture.md §10.2）。 */
+.game-content-main {
+    flex-direction: column;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 880px;
+    /* #187: 行（.game-content-row）の高さに合わせ、行が縮んだときに一緒に縮むようにする。 */
+    align-self: stretch;
+    min-height: 0;
+}
+
+/* #172 / #193 / #213: 立ち絵が非表示（素材未配置・未同意・撤回・character.enabled=false のいずれか）の間は、
+   GameView.Character.cs が中央列に .game-content-main--no-character を付け、右列を display: none にする。
+   中央列は右列の分だけ広がるが、上の .game-content-main の max-width（880px）で頭打ちになり、行ごと中央に寄る。
+   #213 で max-width を立ち絵の有無にかかわらず付けるようにしたので、このクラスにはスタイルを持たせていない
+   （立ち絵の有無をテストや今後のスタイルから見分けるためのフックとして残す）。 */
+
+/* #193: 左右の列（参加者パネル・立ち絵）。縦は行いっぱい、横は割合で決めて上下限を付ける。 */
+.game-side-column {
+    flex-shrink: 0;
+    align-self: stretch;
+}
+
+/* #193: 参加者パネル（左列）。中身（回答順・未回答者・全員のスコア）は #194 で追加（下の .participant-*）。 */
+.game-participant-panel {
+    width: 20%;
+    min-width: 240px;
+    max-width: 320px;
+    margin-right: var(--spacing-m);
+    padding: var(--spacing-m);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-m);
+}
+
+.game-side-column-title {
+    -unity-font-style: bold;
+    margin-bottom: var(--spacing-s);
+}
+
+.game-participant-list {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+/* #194: 参加者パネルの中身。要約（回答権あり n / m 人 など）→ 行の一覧（名簿順）。 */
+.game-participant-summary {
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-s);
+}
+
+/* 1 行 = 上段 [押下順位] [名前（折り返す）] [得点] + 下段 状態。名前は動的な文字列なので明示改行を入れず、
+   white-space: normal で列幅に合わせて折り返して全文を出す（統括判断 #194、docs/architecture.md §10.10）。
+   状態は下段に出し、バッジの右から行の右端（得点の列の下）まで使う（PR #201 再レビュー M-B (a)）。
+   押下順位を持つ行が 1 つも無いときは、バッジの列ごと出さない（同 (b)、ParticipantPanel.cs）。 */
+.participant-row {
+    flex-direction: column;
+    padding: var(--spacing-xs) 0;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-divider);
+}
+
+.participant-row--local {
+    background-color: var(--color-surface-alt);
+    border-radius: var(--radius-s);
+}
+
+.participant-row-header {
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+/* 押下順位のバッジ（「1着」「2着」…）。幅は定員の上限（12 人）で出る最長の「12着」が収まる値
+   （GameViewParticipantPanelLayoutSceneTests で実測）。状態の字下げ（.participant-status--indented）と同じ幅にする。 */
+.participant-rank {
+    margin: 0;
+    padding: 0;
+    width: 44px;
+    flex-shrink: 0;
+    -unity-font-style: bold;
+    -unity-text-align: upper-center;
+    color: var(--color-primary-text);
+}
+
+.participant-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    white-space: normal;
+    color: var(--color-text);
+    margin: 0;
+    padding: 0;
+}
+
+.participant-row--local .participant-name {
+    -unity-font-style: bold;
+}
+
+.participant-row--disconnected .participant-name,
+.participant-row--disconnected .participant-score {
+    color: var(--color-text-muted);
+}
+
+/* 状態（「回答2人目・× 不正解・同着」など）は動的な文言なので折り返す（§10.10、統括判断 #194 M-3）。 */
+.participant-status {
+    white-space: normal;
+    color: var(--color-text-muted);
+    margin: 0;
+    padding: 0;
+}
+
+.participant-status--indented {
+    margin-left: 44px;
+}
+
+.participant-status--answering {
+    color: var(--color-primary-text);
+    -unity-font-style: bold;
+}
+
+.participant-status--correct {
+    color: var(--color-success);
+    -unity-font-style: bold;
+}
+
+.participant-status--wrong {
+    color: var(--color-error-text);
+}
+
+.participant-status--submitted {
+    color: var(--color-accent);
+}
+
+.participant-score {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0;
+    flex-shrink: 0;
+    min-width: 48px;
+    margin-left: var(--spacing-s);
+    -unity-text-align: upper-right;
+    color: var(--color-text);
+}
+
+/* #187: 問題〜判定結果を入れる縦スクロール領域。内容の高さ（flex-grow: 0）で並べ、作業領域に
+   収まらないときだけ縮んでスクロールする（flex-shrink: 1 / min-height: 0 の理由は
+   theme-views-misc.uss の .host-setup-scroll-view と同じ）。下のボタン行は縮まない。 */
+.game-scroll-view {
+    width: 100%;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+/* #187: スクロール領域の外に置く固定要素（司会操作・退出確認）。縮めない。 */
+.game-fixed-section {
+    flex-shrink: 0;
+}
+
+/* #187: 「次へ」（ホストのみ）と「退出」を 1 行に並べる。.menu-row（中央寄せ・flex-shrink: 0）と併用する。 */
+.game-footer-row {
+    flex-wrap: wrap;
+}
+
+.game-footer-group {
+    flex-direction: row;
+    justify-content: center;
+}
+
+/* issue #24 / #193: CharacterView の置き場所（右列）。立ち絵が非表示の間は GameView.Character.cs が
+   列ごと display: none にし、中央列が最大 880px まで広がって中央に寄る（#172）。
+   #191: 列そのものは地（パネルの背景なし）にし、立ち絵のカード（.character-image-frame）を列の幅いっぱいに
+   下端へ置く（配信の立ち絵のように画面の右下に立たせる）。カードの上の余白は地の色のまま。 */
+.game-character-slot {
+    width: 26%;
+    min-width: 280px;
+    max-width: 420px;
+    margin-left: var(--spacing-m);
+    justify-content: flex-end;
+}
+
+/* #132 レビュー H-1: 問題番号（左）と得点（右）を 1 行にまとめる。得点は result-section を
+   判定後のみ表示にした代わりに、ここで常時見えるようにしている。
+   #193: フェーズ（見出し）も同じ行の中央に置く（独立した行にすると約 58px かかるため）。 */
+.game-header-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xs);
+}
+
+/* 左右（問題番号・得点）を同じ幅にして、フェーズを行の中央に置く。 */
+.game-header-side {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+}
+
+.game-phase-label {
+    flex-shrink: 0;
+    margin: 0 var(--spacing-s);
+    -unity-text-align: middle-center;
+}
+
+.game-score-label {
+    -unity-font-style: bold;
+    color: var(--color-primary-text);
+    -unity-text-align: middle-right;
+}
+
+.game-panel {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-m);
+    padding: var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+    width: 100%;
+}
+
+.game-question-text {
+    font-size: var(--font-size-heading);
+    color: var(--color-text);
+    white-space: normal;
+    margin-bottom: var(--spacing-m);
+}
+
+/* 問題文の文字送り（issue #144）。sizer（全文・不可視）が高さを確保し、overlay（表示中の部分）を重ねる。
+   余白は外側の container が持つ（2 つのラベルの margin-bottom は打ち消す）。 */
+.game-question-text-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: var(--spacing-m);
+}
+
+.game-question-text--sizer {
+    visibility: hidden;
+    margin-bottom: 0;
+}
+
+.game-question-text--overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    margin-bottom: 0;
+}
+
+/* 問題画像のエリア（issue #185 / #193）。中央列の上に、問題文とは別のパネルとして画像だけを置く。
+   エリアは中央列の残りの高さをすべて使う（flex-grow: 1）。問題・解答（スクロール領域）と下段の
+   ボタン行は内容の高さのままなので、画像はそのフェーズで使える最大の大きさになる（読み上げ・早押し
+   受付・選択中がいちばん大きく、回答欄や判定結果が出ると縮む。docs/architecture.md §10.2）。
+   画像の表示高さは最小 160px・最大 480px（min-height / max-height は padding 8px × 2 を含めた値）。
+   最小を下回るほど作業領域が低いとき（21:9 の早押しの回答入力中など）は、スクロール領域が縮んで
+   スクロールする（#187）。画像そのものは下の .game-question-image でエリアの内側に広げ、
+   scale-mode="ScaleToFit" で縦横比を保って収める（余白はパネルの地の色）。 */
+.game-question-image-area {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 176px;
+    max-height: 496px;
+    padding: var(--spacing-s);
+}
+
+/* 絶対配置にして、エリアの高さ（flex-grow で決まる）に画像の大きさが影響しないようにする
+   （通常配置だと画像の大きさがエリアの内容の高さになり、残りの高さの配分と循環する）。 */
+.game-question-image {
+    position: absolute;
+    left: var(--spacing-s);
+    top: var(--spacing-s);
+    right: var(--spacing-s);
+    bottom: var(--spacing-s);
+}
+
+/* #187: 残り時間バー（伸びる）と残り秒数（右端・固定幅）を 1 行に並べる。 */
+.game-time-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+}
+
+/* 残り秒数。文字数（「残り 9.9 秒」と「残り 10.0 秒」、締め切りが無いときの空欄）でバーの長さが
+   変わらないよう最小幅を確保し、右寄せにする。 */
+.game-time-remaining-label {
+    flex-shrink: 0;
+    min-width: 120px;
+    margin-left: var(--spacing-s);
+    -unity-text-align: middle-right;
+}
+
+.game-time-bar-track {
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 12px;
+    /* ライト基調では --color-input（純白）だとパネル（クリーム）との差が出ないため、
+       区切り線と同じ濃さの地にする（#132）。 */
+    background-color: var(--color-divider);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.game-time-bar-fill {
+    width: 0%;
+    height: 100%;
+    /* #132 レビュー H2-1: 金そのもの（--color-primary）は track（--color-divider）の上で
+       1.24:1 しか出ず、残り時間が読み取れない。暗く寄せた金（--color-primary-text、4.29:1）にする
+       （ダーク基調では --color-primary-text が金そのものになり、対 --color-divider で 4.14:1）。 */
+    background-color: var(--color-primary-text);
+}
+
+/* 早押しボタン。押した瞬間に色が沈み、わずかに縮んで指に吸い付く感じを出す（issue #132）。 */
+.unity-button.game-buzz-button {
+    min-height: 72px;
+    font-size: var(--font-size-heading);
+    -unity-font-style: bold;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    border-radius: var(--radius-l);
+    transition-property: background-color, border-color, scale;
+    transition-duration: 0.07s;
+}
+
+.unity-button.game-buzz-button:hover {
+    background-color: var(--color-primary-hover);
+    scale: 1.02 1.02;
+}
+
+.unity-button.game-buzz-button:focus {
+    border-color: var(--color-focus-ring-on-primary);
+}
+
+.unity-button.game-buzz-button:active {
+    background-color: var(--color-primary-active);
+    scale: 0.94 0.94;
+}
+
+.unity-button.game-buzz-button:disabled {
+    background-color: var(--color-disabled);
+    color: var(--color-on-disabled);
+    scale: 1 1;
+}
+
+/* 司会が一時停止中であることを示すバッジ（#20、GameSession.IsPaused）。 */
+.game-paused-badge {
+    font-size: var(--font-size-small);
+    -unity-font-style: bold;
+    color: var(--color-on-error);
+    background-color: var(--color-error);
+    border-radius: var(--radius-s);
+    padding: 2px 8px;
+    align-self: flex-start;
+    margin-bottom: var(--spacing-s);
+}
+
+/* 選択式（choice、issue #17）の選択肢ボタン群。
+   #193: 2 列に並べる（4 択で縦幅がほぼ半分になり、その分を画像エリアに回せる）。 */
+.game-choice-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: stretch;
+}
+
+.unity-button.game-choice-button {
+    white-space: normal;
+    -unity-text-align: middle-left;
+    padding: 10px 16px;
+    margin: var(--spacing-xs) 0;
+    width: 49%;
+}
+
+/* #187: 判定後（Result / Finished）は選択肢を詰めて縦幅を減らす（GameView.Choice.cs が
+   choice-section に付け外しする）。判定後はボタンを押せない（表示だけ）ので、
+   ボタンの上下 padding・間隔・最小高さを小さくする。正解・自分の選択の色分けはそのまま残る。
+   詳細度 0,3,0 で .unity-button.game-choice-button（0,2,0）と .unity-button（0,1,0）に勝つ。 */
+.game-choice-section--compact .unity-button.game-choice-button {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    min-height: 32px;
+}
+
+/* 自分が選択したボタン。選んだ直後に選んだボタンも含めて全ボタンが無効化されるため、
+   背景の差（--color-surface-hover と --color-disabled、1.06:1）だけでは選んだものが分からない。
+   枠を文字用の暗い金（パネルに対して 6.85:1）にして識別できるようにする（#132 レビュー L5-5）。
+   判定後に --correct / --wrong が付いても枠は残り、自分の選択を示す。
+   :disabled（枠を --color-divider にする）より確実に勝つよう :disabled 版も明示する。 */
+.unity-button.game-choice-button--selected,
+.unity-button.game-choice-button--selected:disabled {
+    border-color: var(--color-primary-text);
+    background-color: var(--color-surface-hover);
+}
+
+/* 正解の選択肢（判定後）。判定後は全ボタンを SetEnabled(false) にするため、
+   :disabled（詳細度が同じか上）にハイライトの背景色を負けないよう :disabled 版も明示する
+   （レビュー M2）。 */
+.unity-button.game-choice-button--correct,
+.unity-button.game-choice-button--correct:disabled {
+    background-color: var(--color-success);
+    color: var(--color-on-success);
+    -unity-font-style: bold;
+}
+
+/* 自分が選んだが不正解だった選択肢（判定後）。同上の理由で :disabled 版も明示する。 */
+.unity-button.game-choice-button--wrong,
+.unity-button.game-choice-button--wrong:disabled {
+    background-color: var(--color-error);
+    color: var(--color-on-error);
+    -unity-font-style: bold;
+}
+
+/* 退出確認パネル。host-setup-panel-inset と同じ見た目にする。 */
+.game-panel-inset {
+    background-color: var(--color-surface-alt);
+    border-radius: var(--radius-s);
+    padding: var(--spacing-s);
+    margin-bottom: var(--spacing-m);
+    width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   CharacterView（issue #24）— 立ち絵（待機/読み上げ中/正解/不正解）
+   立ち絵原本は二次配布禁止（docs/licenses.md §3）のためビルドに同梱せず、
+   ユーザーが AppPaths.DataRoot（Application.persistentDataPath 相当）配下に配置した
+   tsumugi/tsumugi_v2.png を実行時に読む（未配置・未同意なら character-root ごと非表示、レビュー H1）。
+   --------------------------------------------------------------------------- */
+
+/* #191: 右列の高さいっぱいに広げ、カードを下端に置く（カードの最大の高さ = 右列の高さ）。 */
+.character-root {
+    flex-grow: 1;
+    min-height: 0;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* #191: 立ち絵のカード。幅は右列いっぱい、高さは縦横比（aspect-ratio = 幅 / 高さ）から決まる。
+   既定の 0.771 は生成スクリプトのバストアップ（1385x1797、scripts/generate_tsumugi_expressions.py の
+   CROP_BUSTUP）の縦横比。実際に読み込んだ画像の縦横比が分かったら CharacterView が
+   style.aspectRatio で上書きする（全身の tsumugi_v2.png へのフォールバックや --crop で範囲を変えた場合）。
+   縦長すぎて右列に収まらないとき（例: 全身 1:2 を 21:9 で表示）は max-height で右列の高さに抑え、
+   画像は scale-mode="ScaleToFit" でカードの中に収まる（左右に地の色の余白が出る）。
+   overflow: hidden で立ち絵とバウンス演出を角丸の内側に切り抜く。寸法の実測は docs/architecture.md §10.2。 */
+.character-image-frame {
+    position: relative;
+    width: 100%;
+    max-height: 100%;
+    min-height: 0;
+    aspect-ratio: 0.771;
+    overflow: hidden;
+    background-color: var(--color-character-frame);
+    border-width: 3px;
+    /* 影の代わり: 下辺だけ太く暗い金にしてカードを浮かせる（USS に box-shadow は無い）。 */
+    border-bottom-width: 7px;
+    border-color: var(--color-primary);
+    border-bottom-color: var(--color-primary-active);
+    border-radius: var(--radius-l);
+}
+
+/* 正解/不正解時のティント（#192。枠全体を覆う矩形（旧 character-tint-overlay）は
+   立ち絵の透明部分・余白にも色がかかる不具合があったため廃止し、Image.tintColor で
+   テクスチャの画素にだけ色を乗算する。theme.uss :root の --unity-cursor-color 等と同じ
+   パターンで、CSS カスタムプロパティ --unity-image-tint-color を CharacterView.ApplyState
+   が付け外すクラス経由で設定する。既定は --color-character-tint-none（白 = 無着色）。
+   カードの地（.character-image-frame の background-color）は別の要素なので色は乗らない。
+   #191: 読み上げ中のバウンスは、カードごと動かす（旧: translate: 0 -14px）とバストアップの下端の切れ目が
+   カードの下辺から浮いて見えるため、画像だけを下端中央を支点にわずかに拡大して表現する（頭が上がって見える）。 */
+.character-image {
+    width: 100%;
+    height: 100%;
+    --unity-image-tint-color: var(--color-character-tint-none);
+    transform-origin: 50% 100%;
+    transition-property: scale;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-in-out;
+}
+
+/* 読み上げ中のバウンス演出（CharacterView が character-image-frame--bounce-up を付け外しする）。 */
+.character-image-frame--bounce-up > .character-image {
+    scale: 1.03 1.03;
+}
+
+.character-image--tint-correct {
+    --unity-image-tint-color: var(--color-character-tint-correct);
+}
+
+.character-image--tint-wrong {
+    --unity-image-tint-color: var(--color-character-tint-wrong);
+}
+
+.character-mark {
+    position: absolute;
+}
+
+/* 正解マーク（丸）。#191: カードが大きくなった（幅 220px → 右列いっぱいの 280〜420px）ので 1.25 倍にした。 */
+.character-mark-correct {
+    top: 10px;
+    right: 10px;
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+    border-width: 10px;
+    border-color: var(--color-success);
+}
+
+/* 不正解マーク（バツ）。2 本の帯を ±45 度回転させて重ねる（#191 で 1.25 倍）。 */
+.character-mark-wrong-bar {
+    top: 43px;
+    right: 5px;
+    width: 90px;
+    height: 12px;
+    border-radius: 5px;
+    background-color: var(--color-error-text);
+}
+
+.character-mark-wrong-bar--a {
+    rotate: 45deg;
+}
+
+.character-mark-wrong-bar--b {
+    rotate: -45deg;
+}

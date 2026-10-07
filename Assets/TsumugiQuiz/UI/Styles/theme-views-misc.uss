@@ -1,0 +1,323 @@
+/*
+ * theme-views-misc.uss — Terms / TTS 状態 / HostSetup / Credits 画面のスタイル
+ *
+ * デザイントークン（--color-* / --spacing-* / --font-size-* / --radius-*）と
+ * 共通コントロール（Button / TextField / Toggle ほか）のスタイルは theme.uss にある。
+ * 本ファイルは theme.uss の後に読み込むこと（tsumugi-theme.tss の @import 順と、
+ * 各 UXML の <Style> の並び）。
+ *
+ * #132 レビュー M-4: 1 ファイル 800 行以内を保つため、画面ドメインごとに
+ * theme-views-<ドメイン>.uss へ分割している（EditMode テスト ThemePaletteTests が
+ * Styles/ 配下の全 .uss の行数を検証する）。
+ *
+ * 画面固有のボタンは `.unity-button.<クラス>`（詳細度 0,2,0）で書き、theme.uss の
+ * `.unity-button`（0,1,0）に読み込み順に依存せず勝てるようにする。
+ */
+
+/* ---------------------------------------------------------------------------
+   Terms View（利用規約同意画面）
+   --------------------------------------------------------------------------- */
+
+.terms-root {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+/* #105 レビュー H-2: host-setup-scroll-view と同じ理由で flex-shrink: 1; min-height: 0; を付ける。 */
+.terms-scroll-view {
+    width: 100%;
+    max-width: 720px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.terms-section {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-m);
+    padding: var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+}
+
+.terms-section-heading {
+    font-size: var(--font-size-subheading);
+    color: var(--color-text);
+    -unity-font-style: bold;
+    margin-bottom: var(--spacing-s);
+}
+
+/* M-3: 入れ子の ScrollView をやめ、本文はスクロールしない外側の terms-scroll-view 1本だけで
+   スクロールさせる（自然な高さで表示し、同意チェックの有効化は最下部到達で判定する）。 */
+.terms-section-body {
+    background-color: var(--color-surface-alt);
+    border-radius: var(--radius-s);
+    padding: var(--spacing-s);
+    margin-bottom: var(--spacing-s);
+}
+
+.unity-button.terms-link-button {
+    align-self: flex-start;
+    min-height: 32px;
+    padding: 4px 16px;
+    margin: var(--spacing-xs) 0;
+}
+
+.consent-toggle {
+    flex-shrink: 0;
+    color: var(--color-text);
+    margin: var(--spacing-m) 0;
+}
+
+/* ---------------------------------------------------------------------------
+   TTS 状態表示（#25）
+   --------------------------------------------------------------------------- */
+
+/* #25: Title 隅の読み上げ（TTS）状態表示。クリックで tts-status-panel を開く。 */
+.unity-button.tts-status-corner {
+    position: absolute;
+    top: var(--spacing-s);
+    right: var(--spacing-s);
+    min-height: 28px;
+    padding: 4px 12px;
+    margin: 0;
+    font-size: var(--font-size-small);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+}
+
+.unity-button.tts-status-corner:hover {
+    background-color: var(--color-surface-hover);
+    color: var(--color-text);
+}
+
+/* #25: 読み上げが利用できないときのフォールバック案内パネル（TtsStatusPanel）。 */
+.tts-status-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.tts-status-panel {
+    flex-direction: column;
+    align-items: center;
+    /* #189: 420px では見出し「読み上げの状態はまだ確認していません。」（実測 487px）が折り返さずに
+       パネルの外まではみ出していた。見出しは折り返し可にしたうえで（下の規則）、この見出しが 1 行に収まる
+       幅まで広げる（560px では「ん。」だけが次の行に落ちた。いずれも #189 の撮影で実測）。 */
+    width: 600px;
+    max-width: 90%;
+    background-color: var(--color-surface);
+    border-width: 1px;
+    border-color: var(--color-divider);
+    border-radius: var(--radius-l);
+    padding: var(--spacing-l);
+}
+
+/* #189: .heading は折り返さない（実測: 見出しの resolvedStyle.whiteSpace は NoWrap）。
+   理由別の見出し（例「ONNX Runtime のバージョンが対応していない可能性があります。」）はパネル幅を超えるため、
+   パネル直下の見出し・案内文は折り返し、中央ぞろえにする。直下（>）に限るのは、折りたたみの配置手順
+   （tts-setup-instructions-text も .body-text）まで中央ぞろえにしないため（#189 レビュー M-1）。 */
+.tts-status-panel > .heading,
+.tts-status-panel > .body-text {
+    white-space: normal;
+    -unity-text-align: upper-center;
+    /* #199: 見出し・案内文は区切りの位置に改行を入れて表示する（PhraseWrappedText）。改行位置はラベルの幅で決めるため、
+       ラベルの幅を文言に合わせて縮めず（align-items: center のままだと縮む）、パネルの内側いっぱいに広げる。 */
+    align-self: stretch;
+}
+
+.tts-status-icon {
+    font-size: var(--font-size-title);
+    margin-bottom: var(--spacing-s);
+}
+
+.tts-status-panel .menu-row {
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+
+/* #25 H-2: アプリ内蔵の配置手順（Resources/Docs/tts-setup.txt）を表示する折りたたみ領域。 */
+.tts-setup-instructions {
+    width: 100%;
+    max-height: 220px;
+    background-color: var(--color-surface-alt);
+    border-radius: var(--radius-m);
+    padding: var(--spacing-s);
+    margin-bottom: var(--spacing-s);
+}
+
+/* ---------------------------------------------------------------------------
+   HostSetup View（issue #5）
+   #105 レビュー H-1: host-setup-root は screen-root を併用する（credits-root / terms-root と同じ作法。
+   UXML 側で class="screen-root host-setup-root" とする）。screen-root が flex-grow: 1・
+   background-color・padding・align-items: center を提供するため、host-setup-root 側は
+   justify-content の上書きだけにする。
+   --------------------------------------------------------------------------- */
+
+.host-setup-root {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+/* #105 レビュー H-2: 1280x720 のような低い高さでは、heading + 3 パネル + actions の合計が
+   ウィンドウ高を超えることがある。ScrollView の flex-shrink は既定で 0 のため、収まりきらない分だけ
+   ウィンドウ外へ溢れて下部の actions（「ロビーへ」「戻る」等）が見えなくなっていた。
+   flex-shrink: 1 で足りない分だけ縮められるようにし、min-height: 0 で「内容物の最小高さ」に
+   引っかかって縮みきれない既定挙動を解除する。 */
+.host-setup-scroll-view {
+    width: 100%;
+    max-width: 720px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.host-setup-panel {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-m);
+    padding: var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+    width: 100%;
+}
+
+.host-setup-panel-inset {
+    background-color: var(--color-surface-alt);
+    border-radius: var(--radius-s);
+    padding: var(--spacing-s);
+    margin-top: var(--spacing-s);
+    margin-bottom: var(--spacing-s);
+}
+
+/* #189: 「ホストを停止して戻りますか？」の確認パネル。.screen-root 直下（スクロール領域の外）に置くため、
+   既定の flex-shrink: 1 のままだとウィンドウが低いとき（スクロール領域の中身が多いとき）に高さを削られ、
+   中の「はい、戻る」「キャンセル」が下段の「ロビーへ」「戻る」と重なっていた（900x750 実測）。
+   縮めず、スクロール領域と同じ最大幅に広げる。 */
+.host-setup-back-confirm {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 720px;
+}
+
+.join-code-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--spacing-s);
+}
+
+/* #189: 「インターネット用」（実測: 必要 120px）が幅 120px の列で、flex-shrink の既定 1 により 117px まで
+   縮められて末尾が欠けていた。余裕を持たせ、縮めない。 */
+.join-code-row .small-text {
+    width: 140px;
+    flex-shrink: 0;
+}
+
+/* 参加コードそのもの。画面内でいちばん読み取られる文字なのでブランド色で目立たせる。 */
+.join-code-label {
+    flex-grow: 1;
+    color: var(--color-primary-text);
+    font-size: var(--font-size-subheading);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+/* グローバル IP の手入力欄。何も入力していないと中身に合わせて縮み、幅 1 文字ほどの
+   小さな箱になって入力欄だと分かりにくかった（#132 撮影時に発見）。 */
+.manual-ip-field {
+    flex-grow: 1;
+    min-width: 240px;
+}
+
+.host-setup-warnings {
+    width: 100%;
+}
+
+.host-setup-warning {
+    color: var(--color-warning);
+    white-space: normal;
+    margin-bottom: var(--spacing-s);
+}
+
+.manual-guide-row {
+    color: var(--color-text);
+}
+
+.question-issue-line {
+    white-space: normal;
+    color: var(--color-warning);
+}
+
+/* ---------------------------------------------------------------------------
+   Credits View（クレジット/ライセンス画面）
+   --------------------------------------------------------------------------- */
+
+.credits-root {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+/* #105 レビュー H-2: host-setup-scroll-view と同じ理由で flex-shrink: 1; min-height: 0; を付ける。 */
+.credits-scroll-view {
+    width: 100%;
+    max-width: 720px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.credits-section-title {
+    font-size: var(--font-size-heading);
+    color: var(--color-text);
+    -unity-font-style: bold;
+    margin-top: var(--spacing-m);
+    margin-bottom: var(--spacing-s);
+}
+
+.credits-item {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-m);
+    padding: var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+}
+
+.credits-item-heading {
+    font-size: var(--font-size-subheading);
+    color: var(--color-text);
+    -unity-font-style: bold;
+    margin-bottom: var(--spacing-s);
+}
+
+.credits-credit-line {
+    white-space: normal;
+}
+
+.credits-license-body {
+    white-space: normal;
+}
+
+.credits-consent-status {
+    white-space: normal;
+}
+
+/* Foldout（ライセンス全文の折りたたみ）。既定のエディタ寄りの見た目をダークテーマに合わせる。 */
+.credits-license-foldout {
+    margin-top: var(--spacing-s);
+}
+
+.credits-license-foldout > .unity-foldout__toggle {
+    color: var(--color-text);
+}
+
+.credits-license-foldout .unity-foldout__content {
+    margin-left: 0;
+}
+
+/* ライセンス全文（H-3）。展開時のみ生成される内側の ScrollView。長文でも画面が伸び切らないよう
+   max-height で頭打ちにし、内部だけスクロールさせる（third-party-notices.html 側の
+   .license-text { max-height: 200px; overflow-y: scroll } と同じ考え方）。 */
+.credits-license-scroll {
+    max-height: 240px;
+}

@@ -1,0 +1,163 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="settings-root" class="screen-root host-setup-root">
+        <ui:Label name="settings-heading" text="設定" class="heading" />
+
+        <ui:VisualElement name="settings-tab-bar" class="menu-row settings-tab-bar">
+            <ui:Button name="settings-tab-room-button" text="ルーム設定" />
+            <ui:Button name="settings-tab-presets-button" text="プリセット" />
+            <ui:Button name="settings-tab-app-button" text="アプリ設定" />
+            <ui:Button name="settings-tab-tts-button" text="音声合成" />
+        </ui:VisualElement>
+
+        <ui:ScrollView name="settings-scroll-view" class="host-setup-scroll-view">
+
+            <ui:VisualElement name="room-settings-section" class="settings-tab-section">
+                <!-- L-2: 閲覧モード（クライアント・ゲーム進行中）で無効化するのはこの器だけ。
+                     警告・状態ラベル・「適用」は器の外に置き、理由の文言がグレーにならないようにする。 -->
+                <ui:VisualElement name="room-settings-fields">
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="ホスト・ルーム" class="terms-section-heading" />
+                        <ui:DropdownField name="room-host-role-field" label="役割" />
+                        <ui:IntegerField name="room-max-players-field" label="最大参加人数（2〜12）" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="問題選択" class="terms-section-heading" />
+                        <ui:TextField name="room-questions-set-ids-field" label="出題する問題セットID&#10;（カンマ区切り、空欄で全セット）" />
+                        <ui:DropdownField name="room-questions-type-filter-field" label="出題形式" />
+                        <ui:Toggle name="room-questions-image-only-field" label="画像付きの問題のみ出題する" />
+                        <ui:TextField name="room-questions-tag-filter-field" label="タグで絞り込む&#10;（カンマ区切り、空欄でフィルタなし）" />
+                        <ui:IntegerField name="room-questions-count-field" label="出題数（0で全問）" />
+                        <ui:Toggle name="room-questions-shuffle-order-field" label="出題順をシャッフルする" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="選択式" class="terms-section-heading" />
+                        <ui:Toggle name="room-choices-shuffle-display-field" label="選択肢の表示順をシャッフルする" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="制限時間" class="terms-section-heading" />
+                        <ui:IntegerField name="room-buzz-time-limit-field" label="早押し受付のタイムアウト（秒）" />
+                        <ui:IntegerField name="room-answer-free-text-time-limit-field" label="自由入力の回答制限時間（秒）" />
+                        <ui:IntegerField name="room-answer-choice-time-limit-field" label="選択式の回答制限時間（秒）" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="得点" class="terms-section-heading" />
+                        <ui:IntegerField name="room-score-correct-points-field" label="正解時の加点" />
+                        <ui:IntegerField name="room-score-incorrect-points-field" label="誤答時の得点変化" />
+                        <ui:DropdownField name="room-score-penalty-type-field" label="お手つきペナルティ" />
+                        <ui:IntegerField name="room-score-penalty-minus-points-field" label="減点幅（ペナルティが「減点」のとき）" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="読み上げ" class="terms-section-heading" />
+                        <ui:Toggle name="room-tts-enabled-field" label="読み上げを有効にする" />
+                        <ui:FloatField name="room-tts-speed-field" label="読み上げ速度（0.5〜2.0）" />
+                        <ui:IntegerField name="room-tts-ready-timeout-field" label="読み上げ準備完了の待ち上限（ミリ秒）" />
+                        <ui:FloatField name="room-tts-lead-time-field" label="再生開始の先行時間（秒）" />
+                        <ui:IntegerField name="room-question-reveal-ms-per-char-field" label="読み上げなしの問題文の文字送り&#10;（ミリ秒/文字、0で一括表示）" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="早押し詳細" class="terms-section-heading" />
+                        <ui:Toggle name="room-buzz-allow-during-reading-field" label="読み上げ中でも早押しを受け付ける" />
+                        <ui:Toggle name="room-buzz-reopen-after-wrong-answer-field" label="誤答後、残り時間があれば早押しを再開放する" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="結果・進行" class="terms-section-heading" />
+                        <ui:FloatField name="room-result-auto-advance-field" label="結果表示から自動で次へ進む秒数&#10;（0で手動）" />
+                        <ui:Toggle name="room-network-allow-late-join-field" label="ゲーム進行中の途中参加を許可する" />
+                    </ui:VisualElement>
+
+                    <!-- #194: display.showScores。見せ方の切り替えで、司会には常に表示し、Result 画面の順位表には効かない。 -->
+                    <ui:VisualElement class="host-setup-panel">
+                        <ui:Label text="表示" class="terms-section-heading" />
+                        <ui:Toggle name="room-display-show-scores-field" label="ゲーム画面の参加者一覧に全員の得点を表示する" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:Foldout name="room-advanced-foldout" text="詳細設定" value="false" class="settings-advanced-foldout">
+                    <ui:VisualElement name="room-settings-advanced-fields" class="host-setup-panel">
+                        <ui:IntegerField name="room-buzz-collect-window-field" label="早押し集計窓（ミリ秒、50〜500）" />
+                    </ui:VisualElement>
+                </ui:Foldout>
+
+                <ui:VisualElement name="room-settings-warnings" class="host-setup-warnings" />
+                <ui:Label name="room-settings-status-label" text="" class="small-text small-text-wrap" style="display: none;" />
+                <ui:Button name="room-settings-apply-button" class="button-primary" text="適用" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="presets-section" class="settings-tab-section" style="display: none;">
+                <ui:VisualElement class="host-setup-panel">
+                    <ui:Label text="プリセット" class="terms-section-heading" />
+                    <ui:DropdownField name="preset-select-field" label="プリセット" />
+                    <ui:VisualElement class="menu-row">
+                        <ui:Button name="preset-load-button" text="読み込む" />
+                        <ui:Button name="preset-delete-button" text="削除" />
+                    </ui:VisualElement>
+                    <ui:TextField name="preset-name-field" label="保存する名前" />
+                    <ui:Button name="preset-save-button" class="button-primary" text="現在の設定を保存" />
+                    <ui:VisualElement name="preset-warnings" class="host-setup-warnings" />
+                    <ui:Label name="preset-status-label" text="" class="small-text small-text-wrap" style="display: none;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="app-settings-section" class="settings-tab-section" style="display: none;">
+                <ui:VisualElement class="host-setup-panel">
+                    <ui:Label text="プレイヤー" class="terms-section-heading" />
+                    <ui:TextField name="app-player-name-field" label="プレイヤー名" max-length="16" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="host-setup-panel">
+                    <ui:Label text="UPnP・ネットワーク到達性" class="terms-section-heading" />
+                    <ui:Toggle name="app-upnp-enabled-field" label="UPnPによる自動ポート開放を試みる" />
+                    <ui:IntegerField name="app-upnp-discovery-timeout-field" label="NATデバイス探索のタイムアウト&#10;（ミリ秒）" />
+                    <ui:IntegerField name="app-upnp-mapping-lifetime-field" label="ポートマッピングの有効期間&#10;（秒、0で無期限）" />
+                    <ui:IntegerField name="app-upnp-renew-interval-field" label="マッピング更新間隔（ミリ秒）" />
+                    <ui:TextField name="app-ip-lookup-urls-field" label="グローバルIP確認サービスURL&#10;（改行区切り）" multiline="true" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="host-setup-panel">
+                    <ui:Label text="読み上げ（アプリ設定）" class="terms-section-heading" />
+                    <ui:TextField name="app-tts-speaker-name-field" label="話者名" />
+                    <ui:TextField name="app-tts-style-name-field" label="スタイル名" />
+                    <ui:TextField name="app-tts-cache-max-bytes-field" label="キャッシュ合計サイズの上限（バイト）" />
+                    <ui:IntegerField name="app-tts-cache-max-entries-field" label="キャッシュのエントリ数上限" />
+                    <ui:TextField name="app-tts-asset-path-override-field" label="辞書・モデルの探索パス（任意）" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="host-setup-panel">
+                    <ui:Label text="立ち絵" class="terms-section-heading" />
+                    <ui:Toggle name="app-character-enabled-field" label="立ち絵を表示する" />
+                </ui:VisualElement>
+
+                <ui:Foldout name="app-advanced-foldout" text="詳細設定" value="false" class="settings-advanced-foldout">
+                    <ui:VisualElement name="app-settings-advanced-fields" class="host-setup-panel">
+                        <ui:IntegerField name="app-network-port-field" label="ホストの待ち受けポート&#10;（ホスト設定画面と共通）" />
+                        <ui:IntegerField name="app-question-prefetch-count-field" label="先読みする問題数（0〜3）" />
+                        <ui:Label name="app-question-prefetch-count-note-label" text="※ 先読み数は保存すると即座に反映されます（ホストのみ・0〜3。ホスト開始前に保存した場合は次のホスト開始から）。" class="small-text small-text-wrap" />
+                    </ui:VisualElement>
+                </ui:Foldout>
+
+                <ui:VisualElement name="app-settings-warnings" class="host-setup-warnings" />
+                <ui:Label name="app-settings-status-label" text="" class="small-text" style="display: none;" />
+                <ui:Button name="app-settings-save-button" class="button-primary" text="保存" />
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+
+        <ui:VisualElement name="settings-actions" class="menu-row">
+            <ui:Button name="terms-button" text="利用規約の確認・撤回" />
+            <ui:Button name="back-button" text="戻る" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

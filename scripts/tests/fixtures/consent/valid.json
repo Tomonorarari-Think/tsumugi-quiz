@@ -1,0 +1,14 @@
+[
+  {
+    "termsId": "terms-a",
+    "sha256": "ee77d8ff81ae5f7cf05cb4b1e35a9cba95e141a015ac02b9b2fd3c41db4cfc4a",
+    "acceptedAtUtc": "2026-10-03T09:12:34.5678901Z",
+    "appVersion": "1.0"
+  },
+  {
+    "termsId": "terms-b",
+    "sha256": "90ede30fa0ed7142393c34590e27d70cc6d8a703759a6678ddc0eabde9c08f57",
+    "acceptedAtUtc": "2026-10-03T09:12:34.5678901Z",
+    "appVersion": "1.0"
+  }
+]

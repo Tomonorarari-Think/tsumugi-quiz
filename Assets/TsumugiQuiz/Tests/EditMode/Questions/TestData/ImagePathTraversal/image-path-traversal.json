@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-image-path-traversal",
+  "title": "画像パストラバーサルテスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"], "imagePath": "../outside.png" }
+  ]
+}

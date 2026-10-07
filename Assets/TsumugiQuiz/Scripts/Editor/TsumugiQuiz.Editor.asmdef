@@ -1,0 +1,24 @@
+{
+    "name": "TsumugiQuiz.Editor",
+    "rootNamespace": "TsumugiQuiz.Editor",
+    "references": [
+        "TsumugiQuiz.Core",
+        "TsumugiQuiz.Questions",
+        "TsumugiQuiz.Room",
+        "TsumugiQuiz.Network",
+        "TsumugiQuiz.Tts",
+        "TsumugiQuiz.UI",
+        "Unity.Netcode.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

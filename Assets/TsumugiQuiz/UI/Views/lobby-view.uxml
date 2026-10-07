@@ -1,0 +1,56 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="lobby-root" class="lobby-root">
+        <ui:Label name="lobby-heading" text="ロビー" class="heading" />
+
+        <ui:ScrollView name="lobby-scroll-view" class="lobby-scroll-view">
+            <ui:VisualElement name="lobby-players-section" class="lobby-panel">
+                <ui:VisualElement class="lobby-section-header">
+                    <ui:Label text="参加者" class="lobby-section-heading" />
+                    <ui:Label name="lobby-player-count-label" text="" class="small-text" />
+                </ui:VisualElement>
+                <ui:VisualElement name="lobby-player-list" class="lobby-player-list" />
+                <ui:Label name="lobby-empty-label" text="参加者を待っています…" class="small-text" />
+                <ui:Label name="lobby-duplicate-name-label" text="" class="lobby-notice" style="display: none;" />
+                <ui:Button name="remove-disconnected-button" text="切断中のエントリを削除" style="display: none;" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="lobby-join-code-section" class="lobby-panel" style="display: none;">
+                <ui:Label text="参加コード" class="lobby-section-heading" />
+
+                <ui:VisualElement class="join-code-row">
+                    <ui:Label text="インターネット用" class="small-text" />
+                    <ui:Label name="lobby-internet-code-label" text="" class="join-code-label" />
+                    <ui:Button name="lobby-copy-internet-code-button" text="コピー" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="join-code-row">
+                    <ui:Label text="LAN 用" class="small-text" />
+                    <ui:Label name="lobby-lan-code-label" text="" class="join-code-label" />
+                    <ui:Button name="lobby-copy-lan-code-button" text="コピー" />
+                </ui:VisualElement>
+
+                <ui:Label name="lobby-join-code-note-label" text="" class="small-text small-text-wrap" style="display: none;" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="lobby-room-section" class="lobby-panel" style="display: none;">
+                <ui:Label text="ルーム" class="lobby-section-heading" />
+                <ui:Label name="lobby-role-label" text="" class="small-text" />
+                <ui:Toggle name="lobby-allow-late-join-toggle" label="ゲーム進行中の途中参加を許可する" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+
+        <ui:Label name="lobby-status-label" text="" class="body-text status-text" style="display: none;" />
+
+        <ui:VisualElement name="lobby-actions" class="menu-row">
+            <ui:Button name="start-game-button" class="button-primary" text="ゲーム開始" style="display: none;" />
+            <ui:Button name="lobby-settings-button" text="ルーム設定" />
+            <ui:Button name="leave-button" text="退出" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

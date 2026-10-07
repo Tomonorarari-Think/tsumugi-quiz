@@ -1,0 +1,168 @@
+/*
+ * theme-views-lobby.uss — Lobby / Result 画面のスタイル
+ *
+ * デザイントークン（--color-* / --spacing-* / --font-size-* / --radius-*）と
+ * 共通コントロール（Button / TextField / Toggle ほか）のスタイルは theme.uss にある。
+ * 本ファイルは theme.uss の後に読み込むこと（tsumugi-theme.tss の @import 順と、
+ * 各 UXML の <Style> の並び）。
+ *
+ * #132 レビュー M-4: 1 ファイル 800 行以内を保つため、画面ドメインごとに
+ * theme-views-<ドメイン>.uss へ分割している（EditMode テスト ThemePaletteTests が
+ * Styles/ 配下の全 .uss の行数を検証する）。
+ *
+ * 画面固有のボタンは `.unity-button.<クラス>`（詳細度 0,2,0）で書き、theme.uss の
+ * `.unity-button`（0,1,0）に読み込み順に依存せず勝てるようにする。
+ */
+
+/* ---------------------------------------------------------------------------
+   Lobby View（issue #7）— 参加者一覧・参加コード再表示・ゲーム開始 / 退出
+   --------------------------------------------------------------------------- */
+
+.lobby-root {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: stretch;
+    background-color: var(--color-background);
+    padding: var(--spacing-l);
+}
+
+/* #105 レビュー H-2: host-setup-scroll-view と同じ理由で flex-shrink: 1; min-height: 0; を付ける。 */
+.lobby-scroll-view {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.lobby-panel {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-m);
+    padding: var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+}
+
+.lobby-section-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-s);
+}
+
+.lobby-section-heading {
+    font-size: var(--font-size-subheading);
+    color: var(--color-text);
+    -unity-font-style: bold;
+}
+
+.lobby-player-list {
+    flex-direction: column;
+}
+
+/* 参加者 1 人分の行。名前・バッジ（ホスト / 司会）・接続状態を横に並べる。 */
+.lobby-player-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--color-surface-alt);
+    border-radius: 6px;
+    padding: var(--spacing-s);
+    margin-bottom: var(--spacing-s);
+}
+
+.lobby-player-name {
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    flex-grow: 1;
+}
+
+/* ホスト / 司会マーク。 */
+.lobby-player-badge {
+    font-size: var(--font-size-small);
+    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+    border-radius: var(--radius-s);
+    padding: 2px 8px;
+    margin-left: var(--spacing-s);
+}
+
+.lobby-player-state {
+    font-size: var(--font-size-small);
+    color: var(--color-text-muted);
+    margin-left: var(--spacing-s);
+}
+
+/* 切断中の行はグレー表示にする（docs/network.md §2.4）。
+   #132 レビュー M-3: opacity を下げると行の中のすべての文字のコントラストが等倍で落ち、
+   実効値を検証できない（AA を保証できない）。地を 1 段沈めた色（--color-surface-dim）と
+   補助テキスト色（--color-text-muted）の組み合わせで「生きていない情報」を表現する。 */
+.lobby-player-row--disconnected {
+    background-color: var(--color-surface-dim);
+}
+
+/* 同名が同時に接続しているときの注意（issue #85、docs/network.md §2.3）。 */
+.lobby-notice {
+    font-size: var(--font-size-small);
+    color: var(--color-warning);
+    white-space: normal;
+    margin-top: var(--spacing-s);
+}
+
+.lobby-player-row--disconnected .lobby-player-name,
+.lobby-player-row--disconnected .lobby-player-state {
+    color: var(--color-text-muted);
+}
+
+/* 切断中のバッジも地に沈める（ブランド色のままだと「生きている」ように見えるため）。
+   #132 レビュー M2-1: 文字まで --color-text-muted にすると 3.95:1 で AA を割るため、
+   地だけ沈めて文字は通常の本文色にする（対 --color-divider で 9.26:1）。 */
+.lobby-player-row--disconnected .lobby-player-badge {
+    background-color: var(--color-divider);
+    color: var(--color-text);
+}
+
+/* ---------------------------------------------------------------------------
+   Result View（#20）の順位表示
+   --------------------------------------------------------------------------- */
+
+.result-rank-list {
+    flex-direction: column;
+}
+
+.result-rank-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--color-surface-alt);
+    border-radius: 6px;
+    padding: var(--spacing-s);
+    margin-bottom: var(--spacing-s);
+}
+
+.result-rank-badge {
+    font-size: var(--font-size-base);
+    -unity-font-style: bold;
+    color: var(--color-primary-text);
+    min-width: 56px;
+}
+
+.result-rank-name {
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    flex-grow: 1;
+}
+
+.result-rank-score {
+    /* #189: 「あなた」バッジとの間隔が無く、バッジと得点が接していた。 */
+    margin-left: var(--spacing-s);
+    font-size: var(--font-size-base);
+    -unity-font-style: bold;
+    color: var(--color-text);
+}
+
+/* #132 レビュー M-3: lobby-player-row--disconnected と同じ理由で opacity をやめる。 */
+.result-rank-row--disconnected {
+    background-color: var(--color-surface-dim);
+}
+
+.result-rank-row--disconnected .result-rank-name,
+.result-rank-row--disconnected .result-rank-badge,
+.result-rank-row--disconnected .result-rank-score {
+    color: var(--color-text-muted);
+}

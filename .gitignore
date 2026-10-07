@@ -1,0 +1,80 @@
+# ===== Unity 生成物 =====
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/Assets/AddressableAssetsData/*/*.bin*
+/Assets/StreamingAssets/aa/
+/[Aa]ssets/[Pp]lugins/[Ee]ditor/JetBrains*
+/[Aa]ssets/AssetStoreTools*
+
+# IDE
+.vs/
+.vscode/
+.idea/
+.gradle/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-build.properties
+.DS_Store
+Thumbs.db
+
+# ===== 権利上 git 管理外の素材・ライブラリ（External/README.md 参照） =====
+/External/**/*
+!/External/**/
+!/External/README.md
+!/External/**/.gitkeep
+
+# ネイティブ/モデルを Assets に展開した場合も除外（配置先は docs/tts.md 参照）
+/Assets/StreamingAssets/voicevox_core/
+/Assets/Plugins/voicevox_core/
+
+# 上記フォルダは scripts/setup-external.ps1 が作るので、そのフォルダ .meta も除外する
+# （DLL 本体が git 管理外なので .meta をコミットすると、External 未配置の環境で孤児 .meta になる。
+#   プラグイン設定は Assets/TsumugiQuiz/Scripts/Editor/Tts/VoicevoxPluginPostprocessor.cs が
+#   インポート時に適用するため .meta を共有する必要がない。docs/tts-native-api.md §3.2）。
+#   親フォルダ（Assets/Plugins, Assets/StreamingAssets）の .meta は通常どおり追跡する。
+/Assets/Plugins/voicevox_core.meta
+/Assets/StreamingAssets/voicevox_core.meta
+
+# 立ち絵（issue #24）は Assets/ に一切配置しない（レビュー H1）。ユーザーが
+# AppPaths.DataRoot（Application.persistentDataPath 相当）配下に配置したものを実行時に読む
+# （docs/tts.md §8.2、External/README.md §5.5）。
+
+# ===== Python（scripts/*.py の実行で生成される） =====
+__pycache__/
+*.pyc
+
+# ===== Claude Code / ローカル =====
+.claude/settings.local.json
+.claude/worktrees/
+*.log
+.claude/*.lock

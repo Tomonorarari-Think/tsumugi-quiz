@@ -1,0 +1,39 @@
+# 改行は LF に統一（Unity の YAML/JSON/C# は LF 前提。Windows でも LF で扱う）
+* text=auto eol=lf
+
+# Unity YAML はテキストとして扱う（マージは unityyamlmerge を推奨）
+*.unity text eol=lf merge=unityyamlmerge
+*.prefab text eol=lf merge=unityyamlmerge
+*.asset text eol=lf merge=unityyamlmerge
+*.meta text eol=lf
+*.mat text eol=lf
+*.anim text eol=lf
+*.controller text eol=lf
+*.uxml text eol=lf
+*.uss text eol=lf
+*.asmdef text eol=lf
+*.json text eol=lf
+*.cs text eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
+*.py text eol=lf
+# cmd.exe は LF だけの .bat でラベル・goto などを読み違えることがあるため、.bat だけは CRLF（#219）
+*.bat text eol=crlf
+
+# バイナリ
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.psd binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.dll binary
+*.lib binary
+*.exe binary
+*.zip binary
+*.tar.gz binary
+*.vvm binary
+*.bytes binary

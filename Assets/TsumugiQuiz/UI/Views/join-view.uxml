@@ -1,0 +1,22 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="join-root" class="screen-root">
+        <ui:Label name="join-heading" text="参加コードで参加" class="heading" />
+        <ui:VisualElement name="join-form" class="menu-column">
+            <ui:Label text="プレイヤー名" class="small-text" />
+            <ui:TextField name="player-name-field" max-length="16" />
+            <ui:Label name="player-name-error-label" class="error-text" />
+            <ui:Label text="参加コード（例: 6B01-RGA7-K1K4）" class="small-text" />
+            <ui:TextField name="join-code-field" />
+            <ui:Label name="join-code-error-label" class="error-text" />
+            <ui:Label name="join-status-label" class="body-text status-text" />
+            <ui:Button name="connect-button" class="button-primary" text="参加する" />
+            <ui:Button name="back-button" text="戻る" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

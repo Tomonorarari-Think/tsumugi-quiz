@@ -1,0 +1,705 @@
+#if !UNITY_WEBGL || UNITY_EDITOR
+using System;
+using System.Collections.Generic;
+using Unity.Baselib.LowLevel;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using ErrorState = Unity.Baselib.LowLevel.Binding.Baselib_ErrorState;
+using ErrorCode = Unity.Baselib.LowLevel.Binding.Baselib_ErrorCode;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Unity.Networking.Transport
+{
+    using NetworkRequest = Binding.Baselib_RegisteredNetwork_Request;
+    using CompletionResult = Binding.Baselib_RegisteredNetwork_CompletionResult;
+    using RegisteredNetworkEndpoint = Binding.Baselib_RegisteredNetwork_Endpoint;
+    using NetworkSocket = Binding.Baselib_RegisteredNetwork_Socket_UDP;
+
+    /// <summary>
+    /// Default interface used by <see cref="NetworkDriver"/>, which will send/receive all traffic
+    /// over UDP. Not available on WebGL.
+    /// </summary>
+    [BurstCompile]
+    public struct UDPNetworkInterface : INetworkInterface
+    {
+        // Array size to use when batching send/receive requests. We need to batch these requests
+        // because the array is stack-allocated, and using the send/receive queue sizes could lead
+        // to a stack overflow.
+        const uint k_RequestsBatchSize = 64;
+
+        // Safety value for the maximum number of times we can recreate a socket. Recreating a
+        // socket so many times would indicate some deeper issue that we won't solve by opening
+        // new sockets all the time. This also prevents logging endlessly if we get stuck in a
+        // loop of recreating sockets very frequently.
+        const uint k_MaxNumSocketRecreate = 1000;
+
+        private struct PacketBufferLayout
+        {
+            public uint MetadataOffset;
+            public uint EndpointOffset;
+            public uint PayloadOffset;
+        }
+
+        internal enum SocketStatus
+        {
+            SocketNormal,
+            SocketNeedsRecreate,
+            SocketFailed,
+        }
+
+        internal struct InternalState
+        {
+            public NetworkSocket Socket;
+            public SocketStatus SocketStatus;
+            public NetworkEndpoint BindEndpoint;
+            public int ReceiveQueueCapacity;
+            public int SendQueueCapacity;
+            public long LastUpdateTime;
+            public long LastSocketRecreateTime;
+            public uint NumSocketRecreate;
+            public bool SetDontFragmentBit;
+        }
+
+        private PacketsQueue m_ReceiveQueue;
+        private UnsafeBaselibNetworkArray m_SendBuffers;
+        private UnsafeBaselibNetworkArray m_ReceiveBuffers;
+        private PacketBufferLayout m_PacketBufferLayout;
+
+        internal NativeReference<InternalState> m_InternalState;
+
+        /// <inheritdoc/>
+        public unsafe NetworkEndpoint LocalEndpoint
+        {
+            get
+            {
+                var socket = m_InternalState.Value.Socket;
+                var address = default(Binding.Baselib_NetworkAddress);
+                var error = default(ErrorState);
+
+                Binding.Baselib_RegisteredNetwork_Socket_UDP_GetNetworkAddress(socket, &address, &error);
+                if (error.code != ErrorCode.Success)
+                {
+                    // Bind endpoint is better than nothing if we can't get the effective one.
+                    return m_InternalState.Value.BindEndpoint;
+                }
+
+                return new NetworkEndpoint(address);
+            }
+        }
+
+        /// <inheritdoc/>
+        public unsafe int Initialize(ref NetworkSettings settings, ref int packetPadding)
+        {
+            var networkConfiguration = settings.GetNetworkConfigParameters();
+
+            var state = new InternalState
+            {
+                ReceiveQueueCapacity = networkConfiguration.receiveQueueCapacity,
+                SendQueueCapacity = networkConfiguration.sendQueueCapacity,
+                SetDontFragmentBit = networkConfiguration.performPathMtuDiscovery,
+            };
+
+            m_InternalState = new NativeReference<InternalState>(state, Allocator.Persistent);
+
+            var bufferSize = networkConfiguration.maxMessageSize + UnsafeUtility.SizeOf<PacketMetadata>() + UnsafeUtility.SizeOf<NetworkEndpoint>();
+
+            // Baselib doesn't differientiate between receiving a packet that fits exactly in the
+            // receive buffer, and receiving a packet that is larger. In the latter case, it just
+            // silently truncates the packet. Thus, we ensure there's more data in the buffer than
+            // required for a maximally-sized packet so that if we receive a packet larger than our
+            // MTU, we'll be able to detect it.
+            var receiveBufferSize = bufferSize + 1;
+
+            m_ReceiveBuffers = new UnsafeBaselibNetworkArray(state.ReceiveQueueCapacity, receiveBufferSize);
+            m_SendBuffers = new UnsafeBaselibNetworkArray(state.SendQueueCapacity, bufferSize);
+
+            return 0;
+        }
+
+        internal void CreateQueues(int sendQueueCapacity, int receiveQueueCapacity, int payloadSize, out PacketsQueue sendQueue, out PacketsQueue receiveQueue)
+        {
+            var metadataSize = UnsafeUtility.SizeOf<PacketMetadata>();
+            var endpointSize = UnsafeUtility.SizeOf<NetworkEndpoint>();
+
+            // The registered network endpoint size might require some extra bytes
+            endpointSize = math.max(endpointSize, (int)Binding.Baselib_RegisteredNetwork_Endpoint_MaxSize);
+
+            m_PacketBufferLayout = new PacketBufferLayout
+            {
+                MetadataOffset = 0,
+                EndpointOffset = (uint)metadataSize,
+                PayloadOffset = (uint)(metadataSize + endpointSize),
+            };
+
+            receiveQueue = new PacketsQueue(
+                metadataSize,
+                payloadSize,
+                endpointSize,
+                receiveQueueCapacity,
+                GetTempPacketBuffersArray(receiveQueueCapacity, ref m_ReceiveBuffers));
+
+            m_ReceiveQueue = receiveQueue;
+
+            sendQueue = new PacketsQueue(
+                metadataSize,
+                payloadSize,
+                endpointSize,
+                sendQueueCapacity,
+                GetTempPacketBuffersArray(sendQueueCapacity, ref m_SendBuffers));
+
+            if (m_SendBuffers.ElementSize < metadataSize + payloadSize + endpointSize)
+            {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                throw new InvalidOperationException($"The required buffer size ({metadataSize + payloadSize + endpointSize}) does not fit in the allocated send buffers ({m_SendBuffers.ElementSize})");
+#else
+                Debug.LogError($"The required buffer size ({metadataSize + payloadSize + endpointSize}) does not fit in the allocated send buffers ({m_SendBuffers.ElementSize})");
+#endif
+            }
+
+            if (m_ReceiveBuffers.ElementSize < metadataSize + payloadSize + endpointSize)
+            {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                throw new InvalidOperationException($"The required buffer size ({metadataSize + payloadSize + endpointSize}) does not fit in the allocated receive buffers ({m_ReceiveBuffers.ElementSize})");
+#else
+                Debug.LogError($"The required buffer size ({metadataSize + payloadSize + endpointSize}) does not fit in the allocated receive buffers ({m_ReceiveBuffers.ElementSize})");
+#endif
+            }
+        }
+
+        private unsafe NativeArray<PacketBuffer> GetTempPacketBuffersArray(int capacity, ref UnsafeBaselibNetworkArray buffers)
+        {
+            var buffersList = new NativeArray<PacketBuffer>(capacity, Allocator.Temp, NativeArrayOptions.ClearMemory);
+
+            for (int i = 0; i < capacity; i++)
+            {
+                var bufferPtr = buffers.GetBufferPtr(i);
+                buffersList[i] = new PacketBuffer
+                {
+                    Metadata = bufferPtr + (int)m_PacketBufferLayout.MetadataOffset,
+                    Endpoint = bufferPtr + (int)m_PacketBufferLayout.EndpointOffset,
+                    Payload = bufferPtr + (int)m_PacketBufferLayout.PayloadOffset,
+                };
+            }
+
+            return buffersList;
+        }
+
+        /// <inheritdoc/>
+        public unsafe void Dispose()
+        {
+            CloseSocket(m_InternalState.Value.Socket);
+
+            m_SendBuffers.Dispose();
+            m_ReceiveBuffers.Dispose();
+
+            m_InternalState.Dispose();
+        }
+
+        [BurstCompile]
+        struct FlushSendJob : IJob
+        {
+            public PacketsQueue SendQueue;
+            [NativeDisableContainerSafetyRestriction]
+            public NativeReference<InternalState> InternalState;
+            public UnsafeBaselibNetworkArray SendBuffers;
+            public PacketBufferLayout PacketBufferLayout;
+
+            public unsafe void Execute()
+            {
+                ScheduleSendRequests();
+                ProcessSendRequests();
+                ProcessSendResults();
+            }
+
+            private unsafe void ScheduleSendRequests()
+            {
+                var error = default(ErrorState);
+                var count = SendQueue.Count;
+
+                var requests = new NativeList<NetworkRequest>(count, Allocator.Temp);
+                var requestsPtr = (NetworkRequest*)requests.GetUnsafePtr();
+                var queueIndices = new NativeList<int>(count, Allocator.Temp);
+
+                // Prepare all send requests.
+                for (int i = 0; i < count; i++)
+                {
+                    var packetProcessor = SendQueue[i];
+                    if (packetProcessor.Length == 0)
+                        continue;
+
+                    var request = GetRequest(SendQueue.GetPacketBufferIndex(i), ref SendBuffers, ref PacketBufferLayout);
+
+                    request.payload.offset += (uint)packetProcessor.Offset;
+                    request.payload.data += packetProcessor.Offset;
+                    request.payload.size = (uint)packetProcessor.Length;
+
+                    // Convert endpoint to baselib format.
+                    var endpoint = *(Binding.Baselib_NetworkAddress*)request.remoteEndpoint.slice.data;
+                    Binding.Baselib_RegisteredNetwork_Endpoint_Create(&endpoint, request.remoteEndpoint.slice, &error);
+                    if (error.code != ErrorCode.Success)
+                    {
+                        Debug.LogError($"Couldn't create Baselib network endpoint: {GetBaselibErrorMessage(error)}");
+                        packetProcessor.Drop();
+                        continue;
+                    }
+
+                    requests.Add(request);
+                    queueIndices.Add(i);
+                }
+
+                // Schedule all the send requests.
+                var scheduledCount = (int)Binding.Baselib_RegisteredNetwork_Socket_UDP_ScheduleSend(
+                    InternalState.Value.Socket, requestsPtr, (uint)requests.Length, &error);
+                if (error.code != ErrorCode.Success)
+                {
+                    Debug.LogError($"Baselib operation failed. Couldn't schedule send requests. (native error: {(int)error.nativeErrorCode})");
+                    MarkSocketAsNeedingRecreate(ref InternalState);
+                    return;
+                }
+
+                // Dequeue packets that were sent. Normally that should be all packets since we
+                // ensure we never schedule more sends than what baselib can accomodate. Still, if
+                // not all packets were scheduled, we can't dequeue them in this manner here because
+                // these sends will never be completed and we'll never release their buffers.
+                for (int i = 0; i < scheduledCount; i++)
+                {
+                    SendQueue.DequeuePacketNoRelease(queueIndices[i]);
+                }
+            }
+
+            private unsafe void ProcessSendRequests()
+            {
+                var error = default(ErrorState);
+                var socket = InternalState.Value.Socket;
+                var count = SendQueue.Capacity;
+
+                // Logically we'd just loop indefinitely until the status is not pending. But to
+                // avoid any risk of deadlock, limit the number of calls to the queue capacity.
+                while (count-- > 0)
+                {
+                    var status = Binding.Baselib_RegisteredNetwork_Socket_UDP_ProcessSend(socket, &error);
+                    if (status != Binding.Baselib_RegisteredNetwork_ProcessStatus.Pending)
+                        break;
+                }
+            }
+
+            private unsafe void ProcessSendResults()
+            {
+                var results = new NativeArray<CompletionResult>(SendQueue.Capacity, Allocator.Temp);
+                var resultsPtr = (CompletionResult*)results.GetUnsafePtr();
+
+                var error = default(ErrorState);
+                var count = (int)Binding.Baselib_RegisteredNetwork_Socket_UDP_DequeueSend(
+                    InternalState.Value.Socket, resultsPtr, (uint)results.Length, &error);
+                if (error.code != ErrorCode.Success)
+                {
+                    Debug.LogError($"Baselib operation failed. Couldn't dequeue send results.");
+                    return;
+                }
+
+                // Re-enqueue all completed sends. This way if there's any other layer below, it
+                // will have an opportunity to process it (e.g. the bottom layer can release the
+                // buffer when it clears the send queue).
+                for (int i = 0; i < count; i++)
+                {
+                    var bufferIndex = results[i].requestUserdata.ToInt32() - 1;
+                    SendQueue.EnqueuePacket(bufferIndex, out _);
+                }
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                // Check for any failed sends.
+                var failedCount = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    if (results[i].status == Binding.Baselib_RegisteredNetwork_CompletionStatus.Failed)
+                        failedCount++;
+                }
+
+                if (failedCount > 0)
+                    Debug.LogWarning($"Baselib failed to send {failedCount} packets.");
+#endif
+            }
+        }
+
+        [BurstCompile]
+        struct ReceiveJob : IJob
+        {
+            public PacketsQueue ReceiveQueue;
+            [NativeDisableContainerSafetyRestriction]
+            public NativeReference<InternalState> InternalState;
+            public UnsafeBaselibNetworkArray ReceiveBuffers;
+            public OperationResult Result;
+            public PacketBufferLayout PacketBufferLayout;
+            public long UpdateTime;
+
+            public unsafe void Execute()
+            {
+                // Update last update time of internal state.
+                var state = InternalState.Value;
+                state.LastUpdateTime = UpdateTime;
+                InternalState.Value = state;
+
+                var socket = InternalState.Value.Socket;
+
+                // If we just recreated the socket, need to reset the receive queues.
+                if (InternalState.Value.LastSocketRecreateTime == UpdateTime)
+                    ResetReceiveQueue(ref ReceiveQueue);
+
+                // Baselib requires receives to be scheduled before the message arrives, so we keep them always scheduled.
+                // At this point the process of the received messages has already happened, users accessed them as events
+                // and their buffers should be released.
+                if (ScheduleAllReceives(socket, ref ReceiveQueue, ref ReceiveBuffers, ref PacketBufferLayout) != 0)
+                {
+                    MarkSocketAsNeedingRecreate(ref InternalState);
+                    return;
+                }
+
+                var error = default(ErrorState);
+
+                var pollCount = ReceiveQueue.Capacity;
+                var status = default(Binding.Baselib_RegisteredNetwork_ProcessStatus);
+                while (pollCount-- > 0)
+                {
+                    status = Binding.Baselib_RegisteredNetwork_Socket_UDP_ProcessRecv(socket, &error);
+                    if (status != Binding.Baselib_RegisteredNetwork_ProcessStatus.Pending)
+                        break;
+                }
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                if (status == Binding.Baselib_RegisteredNetwork_ProcessStatus.Pending)
+                {
+                    Debug.LogWarning("There are pending receive packets after the baselib process receive");
+                }
+#endif
+
+                var results = stackalloc CompletionResult[(int)k_RequestsBatchSize];
+
+                var dequeueAgain = true;
+                var totalCount = 0;
+                var failedCount = 0;
+
+                while (dequeueAgain)
+                {
+                    // Pop Completed Requests off the CompletionQ
+                    var count = (int)Binding.Baselib_RegisteredNetwork_Socket_UDP_DequeueRecv(socket, results, k_RequestsBatchSize, &error);
+                    if (error.code != ErrorCode.Success)
+                        return;
+
+                    totalCount += count;
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        var bufferIndex = (int)results[i].requestUserdata - 1;
+
+                        if (results[i].status == Binding.Baselib_RegisteredNetwork_CompletionStatus.Failed)
+                        {
+                            failedCount++;
+                            ReceiveQueue.ReleaseBuffer(bufferIndex); // TSUMUGI-PATCH #163（TSUMUGI-PATCH.md 参照）
+                            continue;
+                        }
+
+                        var receivedBytes = (int)results[i].bytesTransferred;
+                        if (receivedBytes <= 0 || receivedBytes > ReceiveQueue.PayloadCapacity)
+                        {
+                            ReceiveQueue.ReleaseBuffer(bufferIndex); // TSUMUGI-PATCH #163（TSUMUGI-PATCH.md 参照）
+                            continue;
+                        }
+
+                        if (!ReceiveQueue.EnqueuePacket(bufferIndex, out var packetProcessor))
+                        {
+                            Result.ErrorCode = (int)Error.StatusCode.NetworkReceiveQueueFull;
+                            Debug.LogError("Could not enqueue received packet.");
+                            return;
+                        }
+
+                        packetProcessor.SetUnsafeMetadata(receivedBytes);
+                    }
+
+                    // If we filled our batch with requests, there might be more to dequeue.
+                    dequeueAgain = count == (int)k_RequestsBatchSize;
+                }
+
+                // All receive requests being marked as failed is as close as we're going to get to
+                // a signal that the socket has failed with the current baselib API, but it's not a
+                // sufficient signal to declare the socket as failed. That's because baselib will
+                // flag requests as failed for almost any socket error, including transient ones
+                // that don't mean the socket is closed. And unfortunately baselib doesn't bubble up
+                // the native error codes so we can't determine that here.
+                //
+                // What we can do however is to use that as a signal to do a further check on the
+                // socket status. We do that through fetching the local endpoint of the socket. On
+                // all platforms, this ends up calling getsockname() which will fail if the socket
+                // is in a bad state. Then we know if we need to recreate it or not.
+                if (totalCount > 0 && totalCount == failedCount)
+                {
+                    var address = default(Binding.Baselib_NetworkAddress);
+                    Binding.Baselib_RegisteredNetwork_Socket_UDP_GetNetworkAddress(socket, &address, &error);
+                    if (error.code != ErrorCode.Success)
+                    {
+                        // Socket is definitely borked. Best we can do now is try to recreate it.
+                        MarkSocketAsNeedingRecreate(ref InternalState);
+                    }
+                }
+
+                ConvertEndpointsToGeneric();
+            }
+
+            private void ConvertEndpointsToGeneric()
+            {
+                var count = ReceiveQueue.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    var request = GetRequest(ReceiveQueue.GetPacketBufferIndex(i), ref ReceiveBuffers, ref PacketBufferLayout);
+                    if (!ConvertEndpointBufferToGeneric(request.remoteEndpoint.slice))
+                        ReceiveQueue[i].Drop();
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public JobHandle ScheduleReceive(ref ReceiveJobArguments arguments, JobHandle dep)
+        {
+            // TODO: Move this inside the job once MTT-12436 is addressed.
+            if (m_InternalState.Value.SocketStatus == SocketStatus.SocketNeedsRecreate)
+                RecreateSocket(arguments.Time);
+
+            if (m_InternalState.Value.SocketStatus == SocketStatus.SocketFailed)
+            {
+                arguments.ReceiveResult.ErrorCode = (int)Error.StatusCode.NetworkSocketError;
+                return dep;
+            }
+
+            return new ReceiveJob
+            {
+                InternalState = m_InternalState,
+                ReceiveQueue = arguments.ReceiveQueue,
+                ReceiveBuffers = m_ReceiveBuffers,
+                Result = arguments.ReceiveResult,
+                PacketBufferLayout = m_PacketBufferLayout,
+                UpdateTime = arguments.Time,
+            }.Schedule(dep);
+        }
+
+        /// <inheritdoc/>
+        public JobHandle ScheduleSend(ref SendJobArguments arguments, JobHandle dep)
+        {
+            if (m_InternalState.Value.SocketStatus != SocketStatus.SocketNormal)
+                return dep;
+
+            return new FlushSendJob
+            {
+                InternalState = m_InternalState,
+                SendQueue = arguments.SendQueue,
+                SendBuffers = m_SendBuffers,
+                PacketBufferLayout = m_PacketBufferLayout,
+            }.Schedule(dep);
+        }
+
+        /// <inheritdoc/>
+        public unsafe int Bind(NetworkEndpoint endpoint)
+        {
+            var state = m_InternalState.Value;
+
+            CloseSocket(state.Socket);
+
+            state.SetDontFragmentBit = state.SetDontFragmentBit && endpoint.Family == NetworkFamily.Ipv4;
+
+            var result = CreateSocket(state.SendQueueCapacity, state.ReceiveQueueCapacity, endpoint, out var newSocket, state.SetDontFragmentBit);
+            if (result == 0)
+            {
+                state.Socket = newSocket;
+                state.SocketStatus = SocketStatus.SocketNormal;
+                state.BindEndpoint = endpoint;
+
+                // Need to release acquisition status of all packet buffers since we closed their socket.
+                ResetReceiveQueue(ref m_ReceiveQueue);
+
+                result = ScheduleAllReceives(newSocket, ref m_ReceiveQueue, ref m_ReceiveBuffers, ref m_PacketBufferLayout);
+            }
+            else
+            {
+                state.Socket = default;
+                state.SocketStatus = SocketStatus.SocketFailed;
+            }
+
+            m_InternalState.Value = state;
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public int Listen()
+        {
+            return 0;
+        }
+
+        private static unsafe int CreateSocket(int sendQueueCapacity, int receiveQueueCapacity, NetworkEndpoint endpoint, out NetworkSocket socket, bool setDontFragmentBit)
+        {
+            var error = default(ErrorState);
+            socket = Binding.Baselib_RegisteredNetwork_Socket_UDP_Create(
+                endpoint.BaselibAddressPtr,
+                Binding.Baselib_NetworkAddress_AddressReuse.DoNotAllow,
+                checked((uint)sendQueueCapacity),
+                checked((uint)receiveQueueCapacity),
+                &error);
+
+            if (error.code != ErrorCode.Success)
+            {
+                if (error.code == Binding.Baselib_ErrorCode.AddressInUse)
+                    Debug.LogError($"Failed to bind UDP socket because the address is already in use. Likely because there is another process using port {endpoint.Port}.");
+                else
+                    Debug.LogError($"Baselib operation failed. Failed to create UDP socket. (error {(int)error.code}: {GetBaselibErrorMessage(error)})");
+                return (int)Error.StatusCode.NetworkSocketError;
+            }
+
+            if (setDontFragmentBit)
+            {
+                error = default(ErrorState);
+                Binding.Baselib_RegisteredNetwork_Socket_UDP_SetIPv4DontFragHeader(socket, true, &error);
+                // Ignore the error - this isn't supported on all platforms, and it's kind of a nice-to-have anyway.
+                // If it fails, nothing will break, performance may just be slightly less optimal.
+            }
+
+            return 0;
+        }
+
+        private static void CloseSocket(NetworkSocket socket)
+        {
+            if (socket.handle != IntPtr.Zero)
+                Binding.Baselib_RegisteredNetwork_Socket_UDP_Close(socket);
+        }
+
+        private void RecreateSocket(long updateTime)
+        {
+            var state = m_InternalState.Value;
+
+            // If we already recreated the socket in the last update or if we hit the limit of
+            // socket recreations, then something's wrong at the socket layer and recreating it
+            // likely won't solve the issue. Just fail the socket in that scenario.
+            if (state.LastSocketRecreateTime == state.LastUpdateTime || state.NumSocketRecreate >= k_MaxNumSocketRecreate)
+            {
+                Debug.LogError("Unrecoverable socket failure. An unknown condition is preventing the application from reliably creating sockets.");
+                state.SocketStatus = SocketStatus.SocketFailed;
+            }
+            else
+            {
+                Debug.LogWarning("Socket error encountered; attempting recovery by creating a new one.");
+                state.LastSocketRecreateTime = updateTime;
+                state.NumSocketRecreate++;
+
+                CloseSocket(state.Socket);
+                var result = CreateSocket(state.SendQueueCapacity, state.ReceiveQueueCapacity, state.BindEndpoint, out var newSocket, state.SetDontFragmentBit);
+                if (result == 0)
+                {
+                    state.Socket = newSocket;
+                    state.SocketStatus = SocketStatus.SocketNormal;
+                }
+            }
+
+            m_InternalState.Value = state;
+        }
+
+        private static void MarkSocketAsNeedingRecreate(ref NativeReference<InternalState> internalState)
+        {
+            var state = internalState.Value;
+            state.SocketStatus = SocketStatus.SocketNeedsRecreate;
+            internalState.Value = state;
+        }
+
+        private static void ResetReceiveQueue(ref PacketsQueue receiveQueue)
+        {
+            if (receiveQueue.BuffersInUse != 0)
+            {
+                receiveQueue.Clear();
+                receiveQueue.UnsafeResetAcquisitionState();
+            }
+        }
+
+        private static unsafe bool ConvertEndpointBufferToGeneric(Binding.Baselib_RegisteredNetwork_BufferSlice endpointSlice)
+        {
+            var baselibAddress = default(Binding.Baselib_NetworkAddress);
+            var registeredEndpoint = new RegisteredNetworkEndpoint { slice = endpointSlice };
+            var error = default(ErrorState);
+
+            Binding.Baselib_RegisteredNetwork_Endpoint_GetNetworkAddress(registeredEndpoint, &baselibAddress, &error);
+            if (error.code != (int)ErrorCode.Success)
+            {
+                Debug.LogError($"Baselib operation failed. Couldn't create registered endpoint. (error {(int)error.code}: {GetBaselibErrorMessage(error)})");
+                return false;
+            }
+
+            *(NetworkEndpoint*)endpointSlice.data = new NetworkEndpoint(baselibAddress);
+            return true;
+        }
+
+        private unsafe static NetworkRequest GetRequest(int bufferIndex, ref UnsafeBaselibNetworkArray buffers, ref PacketBufferLayout bufferLayout)
+        {
+            var bufferSlice = buffers.AtIndexAsSlice(bufferIndex);
+
+            var request = new NetworkRequest
+            {
+                payload = bufferSlice,
+                remoteEndpoint = new RegisteredNetworkEndpoint
+                {
+                    slice = bufferSlice,
+                },
+                requestUserdata = new IntPtr(bufferIndex + 1),
+            };
+
+            request.payload.offset = bufferLayout.PayloadOffset;
+            request.payload.data = new IntPtr((byte*)request.payload.data + bufferLayout.PayloadOffset);
+            request.payload.size -= bufferLayout.PayloadOffset;
+
+            request.remoteEndpoint.slice.offset = bufferLayout.EndpointOffset;
+            request.remoteEndpoint.slice.data = new IntPtr((byte*)request.remoteEndpoint.slice.data + bufferLayout.EndpointOffset);
+            request.remoteEndpoint.slice.size = Binding.Baselib_RegisteredNetwork_Endpoint_MaxSize;
+
+            return request;
+        }
+
+        private static unsafe int ScheduleAllReceives(NetworkSocket socket, ref PacketsQueue receiveQueue, ref UnsafeBaselibNetworkArray receiveBuffers, ref PacketBufferLayout packetBufferLayout)
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (packetBufferLayout.PayloadOffset == 0 && packetBufferLayout.MetadataOffset == 0)
+                throw new ArgumentNullException("Invalid packetBufferLayour");
+#endif
+            var error = default(ErrorState);
+
+            var requests = stackalloc NetworkRequest[(int)k_RequestsBatchSize];
+            var count = 0;
+
+            do
+            {
+                count = 0;
+                while (count < k_RequestsBatchSize && receiveQueue.TryAcquireBuffer(out var bufferIndex))
+                {
+                    requests[count++] = GetRequest(bufferIndex, ref receiveBuffers, ref packetBufferLayout);
+                }
+
+                Binding.Baselib_RegisteredNetwork_Socket_UDP_ScheduleRecv(socket, requests, (uint)count, &error);
+                if (error.code != ErrorCode.Success)
+                {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                    Debug.LogError($"Baselib operation failed. Couldn't schedule receive requests. (native error: {(int)error.nativeErrorCode})");
+#endif
+                    return (int)Error.StatusCode.NetworkSocketError;
+                }
+            }
+            while (count == k_RequestsBatchSize);
+
+            return 0;
+        }
+        
+        internal static unsafe FixedString512Bytes GetBaselibErrorMessage(Binding.Baselib_ErrorState error)
+        {
+            FixedString512Bytes errorMessage = new FixedString512Bytes();
+            errorMessage.Length = (int)Binding.Baselib_ErrorState_Explain(&error, errorMessage.GetUnsafePtr(), (uint)errorMessage.Capacity, Binding.Baselib_ErrorState_ExplainVerbosity.ErrorType_SourceLocation_Explanation);
+
+            return errorMessage;
+        }
+    }
+}
+#endif // !UNITY_WEBGL || UNITY_EDITOR

@@ -1,0 +1,126 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:Template name="character-view-template" src="../Templates/character-view.uxml" />
+    <ui:VisualElement name="game-root" class="screen-root game-root">
+        <!-- #193: 3 列レイアウト。左 = 参加者パネル（中身は #194）、中央 = 画像エリア（上）+ 問題・解答（下）、
+             右 = 立ち絵（バストアップのカードを右列の下端に置く、#191）。3 列とも作業領域の高さいっぱいに伸ばす。
+             列幅・縦幅の見積りと実測は docs/architecture.md §10.2。 -->
+        <ui:VisualElement name="game-content-row" class="game-content-row">
+            <!-- 参加者パネル（#194）。名簿順（参加順）で固定した行に、早押しの押下順・回答権の有無・選択式の回答済み・
+                 （display.showScores が ON、または司会なら）得点を出す。行は ParticipantPanel（C#）が組み立てる。
+                 人数が多い・名前が長く折り返したときに備えて行の一覧は縦スクロールにする。Space（早押し）を奪わないよう
+                 スクロール領域はフォーカスを持たない（ParticipantPanel.cs）。 -->
+            <ui:VisualElement name="participant-panel" class="game-side-column game-participant-panel">
+                <ui:Label name="participant-panel-title" text="参加者" class="small-text game-side-column-title" />
+                <ui:Label name="participant-summary-label" text="" class="small-text game-participant-summary" style="display: none;" />
+                <ui:ScrollView name="participant-list" class="game-participant-list" mode="Vertical" horizontal-scroller-visibility="Hidden" focusable="false" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="game-content-main" class="game-content-main">
+                <!-- #193: 問題画像は問題文とは別のエリアに、画像だけで大きく表示する（#185 の横並びを置き換え）。
+                     エリアは中央列の残りの高さを埋め（theme-views-game.uss の .game-question-image-area、
+                     最小 160px・最大 480px）、画像は縦横比を保ってその中に収める（scale-mode="ScaleToFit"）。
+                     画像が無い・未着・失敗なら display: none で畳み、下の問題パネルが中央列の上に詰まる
+                     （GameView.QuestionImage.cs）。スクロール領域の外に置くので、問題・解答をスクロールしても画像は隠れない。 -->
+                <ui:VisualElement name="question-image-container" class="game-panel game-question-image-area" style="display: none;">
+                    <ui:Image name="question-image" class="game-question-image" scale-mode="ScaleToFit" />
+                </ui:VisualElement>
+
+                <!-- #187: 問題・早押し・回答・選択肢・判定結果は縦スクロール領域に入れる。作業領域より長いとき
+                     （21:9 の低い論理縦幅・3 行以上の問題文・5 択以上など）はこの領域だけが縮んでスクロールし、
+                     下の司会操作・退出確認・「次へ」「退出」の行（flex-shrink: 0）は常に表示範囲に残る。
+                     操作中のフェーズでは GameView.Scroll.cs が早押し / 回答欄 / 選択肢を表示範囲へスクロールする。 -->
+                <ui:ScrollView name="game-scroll-view" class="game-scroll-view" mode="Vertical" horizontal-scroller-visibility="Hidden">
+                    <ui:VisualElement name="game-header" class="game-panel">
+                        <!-- #193: 問題番号・フェーズ・得点を 1 行にまとめる（フェーズを独立した行にすると約 58px かかり、
+                             画像エリアに回せる縦幅が減るため）。 -->
+                        <ui:VisualElement name="game-header-row" class="game-header-row">
+                            <ui:Label name="question-index-label" text="" class="small-text game-header-side" />
+                            <ui:Label name="phase-label" text="" class="heading game-phase-label" />
+                            <ui:Label name="score-label" text="" class="small-text game-header-side game-score-label" />
+                        </ui:VisualElement>
+                        <ui:Label name="paused-badge-label" text="一時停止中" class="game-paused-badge" style="display: none;" />
+                        <!-- 問題文の文字送り（issue #144）: 不可視の sizer に全文を入れて高さを先に確保し、
+                             表示中の部分（question-text-label）をその上に重ねる。文字が増えても下の要素がずれない。 -->
+                        <ui:VisualElement name="question-text-container" class="game-question-text-container">
+                            <ui:Label name="question-text-sizer" text="" class="body-text game-question-text game-question-text--sizer" />
+                            <ui:Label name="question-text-label" text="" class="body-text game-question-text game-question-text--overlay" />
+                        </ui:VisualElement>
+
+                        <!-- #187: 残り時間バーと残り秒数を 1 行に並べる（縦に積むと約 20px 余計にかかる）。 -->
+                        <ui:VisualElement name="time-row" class="game-time-row">
+                            <ui:VisualElement name="time-bar-track" class="game-time-bar-track">
+                                <ui:VisualElement name="time-bar-fill" class="game-time-bar-fill" />
+                            </ui:VisualElement>
+                            <ui:Label name="time-remaining-label" text="" class="small-text game-time-remaining-label" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="buzz-section" class="game-panel">
+                        <ui:Button name="buzz-button" text="早押し！（Space）" class="game-buzz-button" />
+                        <ui:Label name="buzz-result-label" text="" class="body-text" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="answer-section" class="game-panel" style="display: none;">
+                        <ui:Label text="回答を入力してください" class="small-text" />
+                        <!-- max-length は TsumugiQuiz.Core.QuizStateMachine.MaxAnswerLength と一致させること（H-3）。 -->
+                        <ui:TextField name="answer-field" max-length="100" />
+                        <ui:Label name="answer-error-label" text="" class="error-text" />
+                        <ui:Button name="answer-submit-button" class="button-primary" text="回答する" />
+                    </ui:VisualElement>
+
+                    <!-- 選択式（choice、issue #17）。ボタンは問題ごとに choice-buttons-container へ動的に追加する
+                         （GameView.Choice.cs）。表示順は choices.shuffleDisplay（本 issue では定数）でシャッフルする。
+                         #187: 「選択してください」の案内文は置かない（フェーズ表示の「選択中」と重複するため）。
+                         #193: 選択肢は 2 列に並べる（4 択で縦幅がほぼ半分になり、その分を画像エリアに回せる）。 -->
+                    <ui:VisualElement name="choice-section" class="game-panel" style="display: none;">
+                        <ui:VisualElement name="choice-buttons-container" class="game-choice-buttons" />
+                    </ui:VisualElement>
+
+                    <!-- #132 レビュー H-1: 判定後（Result / Finished）だけ表示する。常時表示すると
+                         16:9 フルスクリーンの論理縦幅では header + buzz + choice + result + actions が
+                         同時に並んで溢れるため。得点は game-header-row へ移して常時表示する。 -->
+                    <ui:VisualElement name="result-section" class="game-panel" style="display: none;">
+                        <ui:Label name="result-label" text="" class="body-text" />
+                    </ui:VisualElement>
+                </ui:ScrollView>
+
+                <!-- 司会専用モード（host.role == moderator、#20）専用。ModeratorControlsPanel がここへ組み込まれる。
+                     司会の主要操作なのでスクロール領域の外に置く（#187）。 -->
+                <ui:VisualElement name="moderator-controls-container" class="game-fixed-section" style="display: none;" />
+
+                <ui:VisualElement name="exit-confirm-container" class="game-panel-inset game-fixed-section" style="display: none;">
+                    <ui:Label name="exit-confirm-label" text="" class="body-text" />
+                    <ui:VisualElement class="menu-row">
+                        <ui:Button name="confirm-exit-button" class="button-danger" text="はい、退出する" />
+                        <ui:Button name="cancel-exit-button" text="キャンセル" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- #187: ホストの「次へ」と「退出」を 1 行にまとめる（縦に 2 行並べると判定後に 66px 余計にかかり、
+                     1600x900 基準の作業領域 836px を超えていた）。「次へ」の有無で行の高さは変わらない。 -->
+                <ui:VisualElement name="game-footer-row" class="menu-row game-footer-row">
+                    <ui:VisualElement name="host-controls" class="game-footer-group" style="display: none;">
+                        <!-- focusable="false"（M-6）: フォーカスを持つと UI Toolkit のデフォルト操作で
+                             Space キーがこのボタンのクリックとして解釈されうるため、早押しキーと衝突しないようにする。 -->
+                        <ui:Button name="next-button" class="button-primary" text="次へ" focusable="false" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="game-actions" class="game-footer-group">
+                        <ui:Button name="exit-button" text="退出" focusable="false" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 立ち絵（issue #24）。右列に配置し、ConsentGate.HasUserConsented() が false なら
+                 CharacterView 自身が非表示にする。表示 ON/OFF のアプリ設定（character.enabled）は
+                 #28 で接続済み（GameView.Character.cs の IsCharacterEnabled）。立ち絵が非表示の間は
+                 列ごと隠し、中央列を最大 880px まで広げて中央に寄せる（#172 / #193、GameView.Character.cs）。中央列の最大幅は立ち絵の有無にかかわらず付く（#213）。カードの寸法は docs/architecture.md §10.2（#191）。 -->
+            <ui:Instance template="character-view-template" name="character-view-instance" class="game-side-column game-character-slot" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-image-bad-extension",
+  "title": "画像拡張子不正テスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"], "imagePath": "images/photo.gif" }
+  ]
+}

@@ -1,0 +1,16 @@
+読み上げ（VOICEVOX）の配置手順
+
+1. リポジトリの External/voicevox_core/ に、公式ダウンローダーで取得した
+   voicevox_core・ONNX Runtime・辞書・音声モデルを配置します
+   （scripts/fetch-voicevox.ps1 を実行すると自動で取得できます）。
+
+2. リポジトリの scripts/setup-external.ps1 を実行します。
+   Assets/Plugins/voicevox_core/ と Assets/StreamingAssets/voicevox_core/ に
+   必要なファイルがコピーされます。
+
+3. アプリを再起動（またはこのパネルの「再試行」）すると、読み上げが利用できるようになります。
+
+配置に必要なファイルが 1 つでも欠けている場合は、読み上げが無効なまま
+クイズ本編は続行できます。慌てず、上記の手順を確認してください。
+
+出典: External/README.md（配置手順の要点を転記。2026-09-13 時点の内容）

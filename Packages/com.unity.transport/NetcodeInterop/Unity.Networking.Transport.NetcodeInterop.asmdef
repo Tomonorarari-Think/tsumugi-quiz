@@ -1,0 +1,25 @@
+{
+    "name": "Unity.Networking.Transport.NetcodeInterop",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Networking.Transport",
+        "Unity.Netcode.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.netcode.gameobjects",
+            "expression": "",
+            "define": "NGO_PROVIDES_NETWORK_TRANSPORT"
+        }
+    ],
+    "noEngineReferences": false
+}

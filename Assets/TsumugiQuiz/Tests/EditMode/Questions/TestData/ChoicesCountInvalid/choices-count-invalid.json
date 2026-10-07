@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-choices-count-invalid",
+  "title": "choices件数不正テスト",
+  "questions": [
+    { "id": "q1", "type": "choice", "text": "問題", "choices": ["a"], "correctIndex": 0 }
+  ]
+}

@@ -1,0 +1,64 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="question-editor-root" class="screen-root host-setup-root question-editor-root">
+        <ui:Label name="question-editor-heading" text="問題エディタ" class="heading" />
+
+        <ui:ScrollView name="question-editor-scroll-view" class="host-setup-scroll-view">
+            <ui:VisualElement name="set-panel" class="host-setup-panel">
+                <ui:Label text="問題セット" class="terms-section-heading" />
+                <ui:VisualElement name="set-folder-warnings-container" class="host-setup-warnings" />
+                <ui:VisualElement name="set-list-container" class="question-editor-list" />
+                <ui:Label name="set-status-label" text="" class="error-text" />
+
+                <ui:VisualElement class="menu-row">
+                    <ui:Button name="new-set-button" text="新規作成" />
+                    <ui:Button name="duplicate-set-button" text="複製" />
+                    <ui:Button name="delete-set-button" text="削除" />
+                    <ui:Button name="reload-sets-button" text="再読込" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="delete-set-confirm-container" class="host-setup-panel-inset" style="display: none;">
+                    <ui:Label name="delete-set-confirm-label" text="" class="body-text" />
+                    <ui:VisualElement class="menu-row">
+                        <ui:Button name="confirm-delete-set-button" class="button-danger" text="削除する" />
+                        <ui:Button name="cancel-delete-set-button" text="キャンセル" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="question-panel" class="host-setup-panel">
+                <ui:Label text="問題一覧" class="terms-section-heading" />
+                <ui:VisualElement name="question-list-container" class="question-editor-list" />
+                <ui:Label name="question-status-label" text="" class="error-text" />
+
+                <ui:VisualElement class="menu-row">
+                    <ui:Button name="add-question-button" text="問題を追加" />
+                    <ui:Button name="delete-question-button" text="削除" />
+                    <ui:Button name="move-question-up-button" text="上へ" />
+                    <ui:Button name="move-question-down-button" text="下へ" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="delete-question-confirm-container" class="host-setup-panel-inset" style="display: none;">
+                    <ui:Label name="delete-question-confirm-label" text="" class="body-text" />
+                    <ui:VisualElement class="menu-row">
+                        <ui:Button name="confirm-delete-question-button" class="button-danger" text="削除する" />
+                        <ui:Button name="cancel-delete-question-button" text="キャンセル" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- 編集フォーム（issue #31）を差し込むコンテナ。中身は QuestionEditorView.Form.cs が
+                     選択中の問題・出題形式に応じて動的に組み立てる。 -->
+                <ui:VisualElement name="question-edit-form-container" class="host-setup-panel-inset" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+
+        <ui:VisualElement name="question-editor-actions" class="menu-row">
+            <ui:Button name="back-button" text="戻る" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="result-root" class="lobby-root">
+        <ui:Label name="result-heading" text="結果" class="heading" />
+        <ui:Label name="result-summary-label" text="" class="small-text" />
+
+        <ui:ScrollView name="result-scroll-view" class="lobby-scroll-view">
+            <ui:VisualElement name="result-rank-list" class="result-rank-list" />
+        </ui:ScrollView>
+
+        <ui:Label name="result-waiting-label" text="ホストの操作をお待ちください…" class="body-text status-text" style="display: none;" />
+        <ui:Label name="result-status-label" text="" class="body-text status-text" style="display: none;" />
+
+        <ui:VisualElement name="result-actions" class="menu-row">
+            <ui:Button name="result-restart-button" class="button-primary" text="もう一度（同じ設定で）" style="display: none;" />
+            <ui:Button name="result-return-to-lobby-button" text="ロビーへ戻る" style="display: none;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

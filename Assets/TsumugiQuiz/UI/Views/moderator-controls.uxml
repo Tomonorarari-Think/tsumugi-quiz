@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="moderator-controls-root" class="lobby-panel">
+        <ui:Label name="moderator-controls-heading" text="司会操作" class="lobby-section-heading" />
+        <ui:Label name="moderator-pause-status-label" text="" class="small-text status-text" style="display: none;" />
+        <ui:VisualElement name="moderator-controls-actions" class="menu-row">
+            <ui:Button name="moderator-next-button" class="button-primary" text="次へ" />
+            <ui:Button name="moderator-pause-button" text="一時停止" />
+            <ui:Button name="moderator-force-correct-button" text="強制正解" />
+            <ui:Button name="moderator-force-wrong-button" text="強制不正解" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

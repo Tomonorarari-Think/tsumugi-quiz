@@ -1,0 +1,62 @@
+[
+  {
+    "name": "header-and-body",
+    "text": "\u51fa\u5178: https://example.com/\n\u53d6\u5f97\u65e5: 2026-10-03\n\n---\n\n\u3000\u672c\u6587\u306e 1 \u884c\u76ee\n\u672c\u6587\u306e 2 \u884c\u76ee\n\n",
+    "sha256": "676623a5049db4c35617a21840c2042c2be77b21538d728a0c6cc6fc40f0fae3"
+  },
+  {
+    "name": "no-separator",
+    "text": "  \u672c\u6587\u3060\u3051\uff08\u533a\u5207\u308a\u306a\u3057\uff09  \n",
+    "sha256": "d3b7a1bc403b70c8d28c890eaa9baca2adb3b0c3a5258d92e27a4e044043c3cc"
+  },
+  {
+    "name": "separator-is-last-line",
+    "text": "\u30d8\u30c3\u30c0\u30fc\u3060\u3051\n---",
+    "sha256": "c1d52c2ee6fbae4b65cbab08e38c56a5e73895671e6d259f416b03b79cde8f10"
+  },
+  {
+    "name": "crlf-and-lone-cr",
+    "text": "h\r\n---\r\nline1\rline2\r\n",
+    "sha256": "683376e290829b482c2655745caffa7a1dccfa10afaa62dac2b42dd6c68d0f83"
+  },
+  {
+    "name": "bom-at-start",
+    "text": "\ufeffh\n---\nbody",
+    "sha256": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
+  },
+  {
+    "name": "bom-at-body-start",
+    "text": "h\n---\n\ufeffbody",
+    "sha256": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
+  },
+  {
+    "name": "control-separator-not-trimmed",
+    "text": "h\n---\nbody\u001c",
+    "sha256": "46a8aaca97b807de72eafa67de717f66a5f81d44e4e5ea544e82816f820d2477"
+  },
+  {
+    "name": "dotnet-whitespace-trimmed",
+    "text": "h\n---\n\u0085\u00a0\u2028body\u2029\u202f\u205f\u3000\t\u000b\f",
+    "sha256": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
+  },
+  {
+    "name": "two-separators",
+    "text": "a\n---\nb\n---\nc",
+    "sha256": "1e40130704fe58b142f50b7f0d336179a58dfcee5fbca8c4d655731ee6bb5fad"
+  },
+  {
+    "name": "separator-with-trailing-space",
+    "text": "a\n--- \nb",
+    "sha256": "fb40438dc8f1291f6a520ce8fb7dd3cb5cbc69cb9622ae916791b1e27d977958"
+  },
+  {
+    "name": "empty-body",
+    "text": "h\n---\n   ",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "japanese-terms",
+    "text": "\u51fa\u5178\n---\n\u300c\u6625\u65e5\u90e8\u3064\u3080\u304e\u516c\u5f0f\u7acb\u3061\u7d75\u3001Live2D\u300d\u5229\u7528\u898f\u7d04\r\n\r\n1. \u52a0\u7b46\u3001\u52a0\u5de5\u3067\u304d\u307e\u3059\u3002\r\n",
+    "sha256": "5e841d86e2f1c3c517c1dcc70a4e4b070099942c58b4c6a5679fdbc266be4483"
+  }
+]

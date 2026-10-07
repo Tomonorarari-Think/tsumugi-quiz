@@ -1,0 +1,26 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../../UI/Styles/theme.uss" />
+    <Style src="../../UI/Styles/theme-controls.uss" />
+    <Style src="../../UI/Styles/theme-views-misc.uss" />
+    <Style src="../../UI/Styles/theme-views-game.uss" />
+    <Style src="../../UI/Styles/theme-views-lobby.uss" />
+    <Style src="../../UI/Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="tts-status-overlay" class="tts-status-overlay">
+        <ui:VisualElement name="tts-status-panel" class="tts-status-panel">
+            <ui:Label name="tts-status-icon" class="tts-status-icon" />
+            <ui:Label name="tts-status-headline" class="heading" />
+            <ui:Label name="tts-status-guidance" class="body-text" />
+            <ui:Label name="tts-status-detail" class="small-text" style="display: none;" />
+            <ui:ScrollView name="tts-setup-instructions-scroll" class="tts-setup-instructions" style="display: none;">
+                <ui:Label name="tts-setup-instructions-text" class="body-text" />
+            </ui:ScrollView>
+            <ui:VisualElement name="tts-status-actions" class="menu-row">
+                <ui:Button name="tts-retry-button" class="button-primary" text="再試行" />
+                <ui:Button name="tts-terms-button" text="利用規約画面へ" />
+                <ui:Button name="tts-continue-button" text="読み上げなしで続行" />
+                <ui:Button name="tts-setup-guide-button" text="配置手順を表示" />
+            </ui:VisualElement>
+            <ui:Button name="tts-close-button" text="閉じる" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

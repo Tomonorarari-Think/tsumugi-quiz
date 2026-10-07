@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-image-path-absolute",
+  "title": "画像絶対パステスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"], "imagePath": "C:\\Windows\\x.png" }
+  ]
+}

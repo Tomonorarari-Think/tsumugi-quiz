@@ -1,0 +1,133 @@
+/*
+ * theme-views-editor.uss — QuestionEditor / Settings 画面のスタイル
+ *
+ * デザイントークン（--color-* / --spacing-* / --font-size-* / --radius-*）と
+ * 共通コントロール（Button / TextField / Toggle ほか）のスタイルは theme.uss にある。
+ * 本ファイルは theme.uss の後に読み込むこと（tsumugi-theme.tss の @import 順と、
+ * 各 UXML の <Style> の並び）。
+ *
+ * #132 レビュー M-4: 1 ファイル 800 行以内を保つため、画面ドメインごとに
+ * theme-views-<ドメイン>.uss へ分割している（EditMode テスト ThemePaletteTests が
+ * Styles/ 配下の全 .uss の行数を検証する）。
+ *
+ * 画面固有のボタンは `.unity-button.<クラス>`（詳細度 0,2,0）で書き、theme.uss の
+ * `.unity-button`（0,1,0）に読み込み順に依存せず勝てるようにする。
+ */
+
+/* ---------------------------------------------------------------------------
+   Question Editor View（issue #30）— セット一覧・問題一覧
+   --------------------------------------------------------------------------- */
+
+.question-editor-root {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.question-editor-list {
+    width: 100%;
+    margin-bottom: var(--spacing-s);
+}
+
+.question-editor-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--color-surface-alt);
+    border-radius: 6px;
+    padding: var(--spacing-s);
+    margin-bottom: var(--spacing-s);
+    border-width: 2px;
+    border-color: rgba(0, 0, 0, 0);
+    transition-property: background-color, border-color;
+    transition-duration: 0.09s;
+}
+
+.question-editor-row:hover {
+    background-color: var(--color-surface-hover);
+}
+
+.question-editor-row-label {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    white-space: normal;
+    flex-grow: 1;
+}
+
+.question-editor-row--selected {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary-hover);
+}
+
+.question-editor-row--selected:hover {
+    background-color: var(--color-primary-hover);
+}
+
+/* 金の上では白系の文字が読めない（1.8:1）ため、選択行のラベルは墨色にする（#132）。 */
+.question-editor-row--selected .question-editor-row-label {
+    color: var(--color-on-primary);
+    -unity-font-style: bold;
+}
+
+/* 編集フォーム（issue #31）の入力欄・エラーハイライト。 */
+.question-editor-field {
+    margin-bottom: var(--spacing-s);
+}
+
+.question-editor-field--invalid .unity-base-text-field__input {
+    border-color: var(--color-error-text);
+}
+
+/* #174: 内側の入力欄の枠が theme.uss の共通規則で 3px になったため、外側のハイライト枠も
+   3px に揃える（2px のままだと内外で太さが不揃いになり境界が二重に見えていた）。 */
+.question-editor-field--invalid {
+    border-width: 3px;
+    border-color: var(--color-error-text);
+    border-radius: var(--radius-s);
+}
+
+/* ---------------------------------------------------------------------------
+   Settings View（issue #28）— ルーム設定/プリセット/アプリ設定/音声合成
+   --------------------------------------------------------------------------- */
+
+.settings-tab-bar {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-s);
+}
+
+/* L1: 現在選択中のタブを強調する。未選択タブは中立色（.unity-button の既定）のままにし、
+   選択中だけブランド色で塗り分ける（#132）。 */
+.unity-button.settings-tab-button--selected {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    -unity-font-style: bold;
+}
+
+.unity-button.settings-tab-button--selected:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.unity-button.settings-tab-button--selected:focus {
+    border-color: var(--color-focus-ring-on-primary);
+}
+
+.settings-tab-section {
+    width: 100%;
+}
+
+.settings-advanced-foldout {
+    margin-top: var(--spacing-s);
+    margin-bottom: var(--spacing-m);
+    color: var(--color-text);
+}
+
+.settings-advanced-foldout > .unity-foldout__toggle {
+    color: var(--color-text);
+}
+
+/* #199: 既定テーマの Foldout は中身を左に字下げする（.unity-foldout__content の margin-left）。詳細設定の入力欄が
+   その分だけ右にずれ、右端もパネルの内側ではなくスクロール領域の端まで伸びて、ほかのパネルの入力欄とそろわなかった
+   （900x750 の実測: 入力欄の左端が 14px 右、右端が 16px 右）。字下げをやめ、中身は .host-setup-panel で包む
+   （settings-view.uxml）。 */
+.settings-advanced-foldout > .unity-foldout__content {
+    margin-left: 0;
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "setId": "test-schema-version-mismatch",
+  "title": "schemaVersion違いテスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"] }
+  ]
+}

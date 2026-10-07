@@ -1,0 +1,24 @@
+{
+    "name": "TsumugiQuiz.Network",
+    "rootNamespace": "TsumugiQuiz.Network",
+    "references": [
+        "TsumugiQuiz.Core",
+        "TsumugiQuiz.Questions",
+        "TsumugiQuiz.Room",
+        "Unity.Netcode.Runtime",
+        "Unity.Collections",
+        "Unity.Networking.Transport"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Mono.Nat.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

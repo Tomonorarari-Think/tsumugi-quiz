@@ -1,0 +1,104 @@
+{
+  "requiredTerms": [
+    {
+      "termsId": "terms-a",
+      "sha256": "ee77d8ff81ae5f7cf05cb4b1e35a9cba95e141a015ac02b9b2fd3c41db4cfc4a"
+    },
+    {
+      "termsId": "terms-b",
+      "sha256": "90ede30fa0ed7142393c34590e27d70cc6d8a703759a6678ddc0eabde9c08f57"
+    }
+  ],
+  "cases": [
+    {
+      "name": "valid",
+      "file": "valid.json",
+      "accepted": true
+    },
+    {
+      "name": "valid-with-unknown-fields-and-extra-record",
+      "file": "valid-with-unknown-fields-and-extra-record.json",
+      "accepted": true
+    },
+    {
+      "name": "valid-utf8-bom",
+      "file": "valid-utf8-bom.json",
+      "accepted": true
+    },
+    {
+      "name": "valid-without-accepted-at",
+      "file": "valid-without-accepted-at.json",
+      "accepted": true
+    },
+    {
+      "name": "valid-case-insensitive-keys",
+      "file": "valid-case-insensitive-keys.json",
+      "accepted": true
+    },
+    {
+      "name": "missing-file",
+      "file": null,
+      "accepted": false
+    },
+    {
+      "name": "revoked-empty-array",
+      "file": "revoked-empty-array.json",
+      "accepted": false
+    },
+    {
+      "name": "json-null",
+      "file": "json-null.json",
+      "accepted": false
+    },
+    {
+      "name": "version-mismatch",
+      "file": "version-mismatch.json",
+      "accepted": false
+    },
+    {
+      "name": "one-terms-missing",
+      "file": "one-terms-missing.json",
+      "accepted": false
+    },
+    {
+      "name": "hash-uppercase",
+      "file": "hash-uppercase.json",
+      "accepted": false
+    },
+    {
+      "name": "record-without-app-version",
+      "file": "record-without-app-version.json",
+      "accepted": false
+    },
+    {
+      "name": "broken-json",
+      "file": "broken-json.json",
+      "accepted": false
+    },
+    {
+      "name": "not-an-array",
+      "file": "not-an-array.json",
+      "accepted": false
+    },
+    {
+      "name": "null-element",
+      "file": "null-element.json",
+      "accepted": false
+    },
+    {
+      "name": "accepted-at-null",
+      "file": "accepted-at-null.json",
+      "accepted": false
+    },
+    {
+      "name": "accepted-at-not-a-date",
+      "file": "accepted-at-not-a-date.json",
+      "accepted": false
+    },
+    {
+      "name": "terms-id-is-object",
+      "file": "terms-id-is-object.json",
+      "accepted": false
+    }
+  ]
+}

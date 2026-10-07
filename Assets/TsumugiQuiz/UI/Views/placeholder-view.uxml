@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="placeholder-root" class="screen-root">
+        <ui:Label name="placeholder-heading" text="未実装" class="heading" />
+        <ui:Label name="placeholder-message" text="この画面はまだ実装されていません。" class="body-text" />
+        <ui:Button name="back-button" text="戻る" />
+    </ui:VisualElement>
+</ui:UXML>

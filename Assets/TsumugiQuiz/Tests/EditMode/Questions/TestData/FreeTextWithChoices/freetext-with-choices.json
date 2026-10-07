@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-freetext-with-choices",
+  "title": "freeTextにchoicesテスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"], "choices": ["x", "y"] }
+  ]
+}

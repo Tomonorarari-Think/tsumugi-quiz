@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-omitted-optional-fields",
+  "title": "省略時デフォルトテスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題文", "answers": ["a"] }
+  ]
+}

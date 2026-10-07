@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-json-syntax-error",
+  "title": "JSON構文エラーテスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"] },
+  ]

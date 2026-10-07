@@ -1,0 +1,7 @@
+# Python packages used by scripts/generate_tsumugi_expressions.py (issue #86 / #219).
+# psd-tools: MIT, Pillow: MIT-CMU (docs/licenses.md section 15). Not bundled; users install them with pip.
+# Single source for both the repository script (generate-tsumugi-expressions.ps1 -InstallDeps)
+# and the release zip tool (tools/tsumugi-expressions/requirements.txt). Keep this file ASCII only:
+# pip may read it with the system code page (cp932 on Japanese Windows).
+psd-tools>=1.19
+Pillow>=10

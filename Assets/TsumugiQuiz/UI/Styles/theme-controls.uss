@@ -1,0 +1,330 @@
+/*
+ * theme-controls.uss — 入力系コントロールのスタイル（TextField / IntegerField / FloatField / DropdownField /
+ * Toggle / Foldout / ScrollView）の通常・:hover・:focus・:active・:disabled
+ *
+ * #189 レビュー M-2: theme.uss が 800 行の上限に近づいたため、「5. コントロール」のうち Button 以外を
+ * このファイルへ分けた（Button は theme.uss に残す）。デザイントークン（--color-* ほか）は theme.uss の :root にある。
+ * 読み込み順は tsumugi-theme.tss と各 UXML の <Style> の並び
+ * （theme.uss → theme-controls.uss → theme-views-misc → -game → -lobby → -editor）で決まる。
+ * 詳細度の前提（既定テーマに勝つには `.unity-*` のクラスセレクタ、状態は `:enabled` を足す）は
+ * theme.uss 冒頭と docs/architecture.md §10.1 を参照。
+ */
+
+/* ---- TextField / IntegerField / FloatField ---------------------------------
+   入力欄は面（--color-input = 純白）にし、パネル（--color-surface = クリーム）との段差で
+   入力できる場所だとわかるようにする。枠線は非文字コントラスト 3:1 以上（WCAG 1.4.11）を満たす
+   --color-border（#8d7768、対 --color-input で 4.22:1・対 --color-surface で 4.07:1）を使う。
+   --------------------------------------------------------------------------- */
+.unity-base-text-field {
+    margin: var(--spacing-s) 0;
+    font-size: var(--font-size-base);
+}
+
+.unity-base-text-field__input {
+    background-color: var(--color-input);
+    color: var(--color-text);
+    /* #132 レビュー M-1: 既定テーマのキャレット・選択色はテーマの地色を考慮しないため、
+       入力位置が見えない・選択範囲の文字が読めないことがある。キャレットは本文色、
+       選択はブランド色の半透明（地の文字を透かして読ませる）にする。 */
+    --unity-cursor-color: var(--color-text);
+    --unity-selection-color: var(--color-selection);
+    /* #174: ボタンと同じく 2px → 3px（全状態で一定、:focus でも太さは変えない）。 */
+    border-width: 3px;
+    border-color: var(--color-border);
+    border-radius: var(--radius-s);
+    padding: 6px 10px;
+    transition-property: border-color, background-color;
+    transition-duration: 0.09s;
+}
+
+/* #189: 複数行の入力欄（問題エディタの「問題文」「読み上げ用テキスト」、アプリ設定の IP 確認サービス URL）は
+   既定では入力欄の幅で折り返さず、改行を入れない限り 1 行のまま右端で文字が切れていた。
+   入力欄の幅で折り返し、高さは中身に合わせて伸びるようにする。1 行の入力欄には当たらない。
+   入力欄なので、入力した連続スペース・改行をそのまま表示する pre-wrap にする（#189 レビュー L-2）。
+   カーソル位置（ITextSelection.GetCursorPositionFromStringIndex）が連続スペース・改行どおりに進むことは
+   PlayMode テストで確認した（なお #189 の実測では normal でも同じ位置に進み、差は見られなかった）。 */
+.unity-base-text-field__input--multiline,
+.unity-base-text-field__input--multiline .unity-text-element {
+    white-space: pre-wrap;
+}
+
+.unity-base-text-field:hover .unity-base-text-field__input,
+.unity-base-text-field:hover:enabled .unity-base-text-field__input {
+    border-color: var(--color-primary-active);
+}
+
+/* フォーカスは TextField 自身に載る（PlayMode で focusController.focusedElement を実測）。
+   既定テーマはフォーカス枠を `:focus:enabled` 付きの規則（詳細度 0,4,0 相当）で青
+   rgb(0,106,166) に塗るため、`:enabled` を付けない 0,3,0 の規則では枠色だけ負けていた
+   （同じ規則の background-color は通っていたので「規則は当たっているのに枠だけ青い」ように見えた）。
+   `:enabled` を足した 0,4,0 の規則で上書きする（#132。ButtonStateStyleTests /
+   TextFieldFocusRingTests と、ビルドのスクリーンショットのピクセル計測で確認）。 */
+.unity-base-text-field__input:focus,
+.unity-base-text-field:focus .unity-base-text-field__input,
+.unity-base-text-field:focus:enabled .unity-base-text-field__input {
+    border-color: var(--color-focus-ring);
+    background-color: var(--color-input-focus);
+}
+
+.unity-base-text-field:disabled .unity-base-text-field__input {
+    background-color: var(--color-disabled);
+    color: var(--color-on-disabled);
+    border-color: var(--color-divider);
+}
+
+/* ---- DropdownField --------------------------------------------------------- */
+/* #189: 既定テーマはドロップダウンのフィールドと入力部に左右の余白を付けるため（実測: 入力部の margin-left 4px）、
+   同じ列に並ぶ TextField / IntegerField と入力欄の左端がずれていた。余白をそろえる。 */
+.unity-base-popup-field,
+.unity-base-popup-field .unity-base-popup-field__input {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.unity-base-popup-field__input {
+    background-color: var(--color-input);
+    /* #174: 入力欄と同じく 2px → 3px。 */
+    border-width: 3px;
+    border-color: var(--color-border);
+    border-radius: var(--radius-s);
+    padding: 4px 8px;
+    min-height: 32px;
+    transition-property: border-color;
+    transition-duration: 0.09s;
+}
+
+.unity-base-popup-field__text {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+}
+
+.unity-base-popup-field:hover .unity-base-popup-field__input,
+.unity-base-popup-field:hover:enabled .unity-base-popup-field__input {
+    border-color: var(--color-primary-active);
+}
+
+.unity-base-popup-field:focus .unity-base-popup-field__input,
+.unity-base-popup-field:focus:enabled .unity-base-popup-field__input {
+    border-color: var(--color-focus-ring);
+}
+
+/* メニューを開いている間、フィールドは :active（ポインタを捕捉した状態）になり、既定テーマは
+   入力欄を濃いグレー #959595 で塗る（ButtonStateStyleTests で疑似状態を立てて特定した）。
+   開いていることが分かるよう、フォーカス時と同じ見た目にする。 */
+.unity-base-popup-field:active:enabled .unity-base-popup-field__input,
+.unity-base-popup-field:hover:active:enabled .unity-base-popup-field__input {
+    background-color: var(--color-input-focus);
+    border-color: var(--color-focus-ring);
+}
+
+.unity-base-popup-field:disabled .unity-base-popup-field__input {
+    background-color: var(--color-disabled);
+    border-color: var(--color-divider);
+}
+
+/* ---- DropdownField のメニュー（GenericDropdownMenu）--------------------------
+   メニューはパネルのルートに追加されるので、テーマ（tsumugi-theme.tss）の規則が届く。
+   クラス名は UnityEngine.UIElementsModule が組み立てる `unity-base-dropdown` + 接尾辞
+   （__container-outer / __item / __label / __checkmark）を実測で確認した（#132）。
+   --------------------------------------------------------------------------- */
+/* 実測: `.unity-base-dropdown__container-outer` の背景だけでは既定の明るいグレー #f0f0f0 のまま
+   だったため、親クラスを足して詳細度を上げ、内側の入れ物にも同じ色を当てる。 */
+.unity-base-dropdown__container-outer,
+.unity-base-dropdown .unity-base-dropdown__container-outer {
+    background-color: var(--color-surface);
+    border-width: 1px;
+    border-color: var(--color-border);
+    border-radius: var(--radius-s);
+}
+
+.unity-base-dropdown .unity-base-dropdown__container-inner {
+    background-color: var(--color-surface);
+}
+
+.unity-base-dropdown__item {
+    padding: var(--spacing-xs) var(--spacing-s);
+}
+
+.unity-base-dropdown__item:hover {
+    background-color: var(--color-surface-hover);
+}
+
+.unity-base-dropdown__label {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+}
+
+.unity-base-dropdown__checkmark {
+    -unity-background-image-tint-color: var(--color-primary-text);
+}
+
+/* ---- Toggle ----------------------------------------------------------------
+   チェックマークの画像は Unity 既定テーマのものをそのまま使い、地と枠の色だけ寄せる。
+   枠は 3px を確保しておき（#174 で 2px から変更）、:hover / :focus で色を変えても
+   レイアウトを動かさない。
+   --------------------------------------------------------------------------- */
+.unity-toggle {
+    margin: var(--spacing-xs) 0;
+}
+
+.unity-toggle__text {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    white-space: normal;
+    margin-left: var(--spacing-xs);
+}
+
+.unity-toggle__checkmark {
+    border-width: 3px;
+    border-color: var(--color-border);
+    background-color: var(--color-input);
+    border-radius: var(--radius-s);
+    transition-property: border-color;
+    transition-duration: 0.09s;
+}
+
+/* 箱の地と枠（#132 レビュー M5-1）。既定テーマは箱を .unity-toggle__input 経由の規則で
+   #f0f0f0 一色に塗り、パネル（--color-surface）に対して 1.10:1 しか出ず箱が見えなかった。
+   入力欄と同じ「純白の地 + --color-border の枠」にする。既定テーマに負けないよう
+   .unity-toggle__input を挟み、:enabled 付きの版も並べて詳細度を上げている。 */
+.unity-toggle .unity-toggle__input .unity-toggle__checkmark,
+.unity-toggle:enabled .unity-toggle__input .unity-toggle__checkmark,
+.unity-toggle:hover:enabled .unity-toggle__input .unity-toggle__checkmark,
+.unity-toggle:checked:enabled .unity-toggle__input .unity-toggle__checkmark {
+    background-color: var(--color-input);
+    border-color: var(--color-border);
+}
+
+.unity-toggle:disabled .unity-toggle__input .unity-toggle__checkmark {
+    background-color: var(--color-disabled);
+    border-color: var(--color-divider);
+}
+
+.unity-toggle:hover .unity-toggle__checkmark,
+.unity-toggle:hover:enabled .unity-toggle__checkmark,
+.unity-toggle:hover:enabled .unity-toggle__input .unity-toggle__checkmark {
+    border-color: var(--color-primary-active);
+}
+
+.unity-toggle:focus .unity-toggle__checkmark,
+.unity-toggle:focus:enabled .unity-toggle__checkmark,
+.unity-toggle:focus:enabled .unity-toggle__input .unity-toggle__checkmark,
+.unity-toggle:hover:focus:enabled .unity-toggle__input .unity-toggle__checkmark {
+    border-color: var(--color-focus-ring);
+}
+
+.unity-toggle:disabled .unity-toggle__text {
+    color: var(--color-on-disabled);
+}
+
+/* ---- Foldout --------------------------------------------------------------- */
+.unity-foldout__toggle {
+    margin: var(--spacing-xs) 0;
+}
+
+.unity-foldout__text {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    -unity-font-style: bold;
+}
+
+/* ホバー時は文字を金に寄せる。金そのもの（--color-primary-hover #f3c64a）はライト基調の面の上で
+   1.4:1 しか出ず読めなくなるため、文字用の --color-primary-text を使う（#132 撮影時に発見）。 */
+.unity-foldout__toggle:hover .unity-foldout__text {
+    color: var(--color-primary-text);
+}
+
+.unity-foldout__toggle:focus .unity-foldout__checkmark {
+    border-width: 2px;
+    border-color: var(--color-focus-ring);
+    border-radius: var(--radius-s);
+}
+
+/* ---- ScrollView / Scroller -------------------------------------------------
+   既定テーマのスクロールバーは独自のグレーで、本テーマの面の色（--color-background /
+   --color-divider）と合わないため塗り直す。上下の矢印ボタンは今どきの見た目に合わせて隠す
+   （ドラッグとホイールで操作できる）。
+   --------------------------------------------------------------------------- */
+.unity-scroller {
+    background-color: var(--color-background);
+    background-image: none;
+    border-width: 0;
+}
+
+.unity-scroller__slider {
+    background-image: none;
+    border-width: 0;
+    margin: 0;
+}
+
+.unity-scroller--vertical {
+    width: 12px;
+}
+
+.unity-scroller--horizontal {
+    height: 12px;
+}
+
+.unity-scroller__low-button,
+.unity-scroller__high-button {
+    display: none;
+}
+
+.unity-base-slider__tracker {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+    border-width: 0;
+}
+
+.unity-base-slider__dragger {
+    background-color: var(--color-divider);
+    background-image: none;
+    border-width: 0;
+    border-radius: 6px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: var(--color-border);
+    background-image: none;
+}
+
+/* 既定ランタイムテーマはスクロールバーの部品を **名前セレクタ**（#unity-dragger など、詳細度 1,0,0）で
+   塗っている。クラスセレクタ（0,1,0）では勝てないため、同じ名前セレクタで上書きする（#132 実測:
+   .unity-base-slider__dragger だけではスクロールバーが既定の明るいグレーのままだった）。
+   #132 レビュー M-2: 名前セレクタは UXML 側で同名を付けた要素にも当たってしまうため、
+   必ず .unity-scroll-view / .unity-scroller の子孫に限定して書くこと（詳細度も 1,1,0 になり
+   既定テーマの 1,0,0 に確実に勝てる）。 */
+.unity-scroll-view #unity-vertical-scroller,
+.unity-scroll-view #unity-horizontal-scroller {
+    background-color: var(--color-background);
+    background-image: none;
+    border-width: 0;
+}
+
+.unity-scroller #unity-slider {
+    background-image: none;
+    border-width: 0;
+    margin: 0;
+}
+
+.unity-scroller #unity-tracker {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+    border-width: 0;
+}
+
+.unity-scroller #unity-dragger {
+    background-color: var(--color-divider);
+    background-image: none;
+    border-width: 0;
+    border-radius: 6px;
+}
+
+.unity-scroller #unity-dragger:hover {
+    background-color: var(--color-border);
+}
+
+.unity-scroller #unity-low-button,
+.unity-scroller #unity-high-button {
+    display: none;
+}

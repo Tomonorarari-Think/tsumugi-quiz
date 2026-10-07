@@ -1,0 +1,18 @@
+#!/bin/sh
+# main / develop への直接 push を禁止するローカルフック（GitHub のブランチ保護が無料プランの
+# プライベートリポジトリでは使えないための代替）。
+# 有効化: git config core.hooksPath scripts/git-hooks
+# 意図的に直接 push する場合（初期セットアップ等）: ALLOW_DIRECT_PUSH=1 git push ...
+if [ "${ALLOW_DIRECT_PUSH:-0}" = "1" ]; then
+  exit 0
+fi
+while read local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/develop)
+      echo "pre-push: $remote_ref への直接 push は禁止です。feature ブランチから PR を作成してください。" >&2
+      echo "          （意図的な場合は ALLOW_DIRECT_PUSH=1 を付けて再実行）" >&2
+      exit 1
+      ;;
+  esac
+done
+exit 0

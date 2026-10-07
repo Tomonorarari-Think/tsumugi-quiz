@@ -1,0 +1,21 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="terms-root" class="screen-root terms-root">
+        <ui:Label name="terms-heading" text="利用規約への同意" class="heading" />
+        <ui:Label name="terms-description" text="サービスの利用には、以下の利用規約すべてへの同意が必要です。" class="body-text" />
+        <ui:Label name="terms-status-label" text="" class="small-text small-text-wrap" style="display: none;" />
+        <ui:ScrollView name="terms-scroll-view" class="terms-scroll-view">
+            <ui:VisualElement name="terms-sections" />
+        </ui:ScrollView>
+        <ui:Toggle name="consent-toggle" label="上記の利用規約に同意します" class="consent-toggle" />
+        <ui:VisualElement name="terms-actions" class="menu-row">
+            <ui:Button name="agree-button" class="button-primary" text="同意して進む" />
+            <ui:Button name="revoke-button" class="button-danger" text="同意を撤回" style="display: none;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

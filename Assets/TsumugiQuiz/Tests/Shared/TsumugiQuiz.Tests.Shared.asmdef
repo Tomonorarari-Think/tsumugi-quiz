@@ -1,0 +1,25 @@
+{
+    "name": "TsumugiQuiz.Tests.Shared",
+    "rootNamespace": "TsumugiQuiz.Tests.Shared",
+    "references": [
+        "TsumugiQuiz.Core",
+        "TsumugiQuiz.Network",
+        "TsumugiQuiz.Room",
+        "TsumugiQuiz.Tts",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Mono.Nat.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

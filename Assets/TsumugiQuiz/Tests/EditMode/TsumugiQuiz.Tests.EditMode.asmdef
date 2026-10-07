@@ -1,0 +1,35 @@
+{
+    "name": "TsumugiQuiz.Tests.EditMode",
+    "rootNamespace": "TsumugiQuiz.Tests.EditMode",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "TsumugiQuiz.Core",
+        "TsumugiQuiz.Questions",
+        "TsumugiQuiz.Room",
+        "TsumugiQuiz.Network",
+        "TsumugiQuiz.Tts",
+        "TsumugiQuiz.UI",
+        "TsumugiQuiz.Editor",
+        "TsumugiQuiz.Tests.Shared",
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Mono.Nat.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,22 @@
+{
+    "name": "TsumugiQuiz.UI",
+    "rootNamespace": "TsumugiQuiz.UI",
+    "references": [
+        "TsumugiQuiz.Core",
+        "TsumugiQuiz.Questions",
+        "TsumugiQuiz.Room",
+        "TsumugiQuiz.Network",
+        "TsumugiQuiz.Tts",
+        "Unity.Netcode.Runtime",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,500 @@
+/*
+ * theme.uss — デザイントークンと共通コントロールのスタイル（issue #132）
+ *
+ * 構成
+ *   1. デザイントークン（:root のカスタムプロパティ）
+ *   2. Unity 既定ランタイムテーマの打ち消し（Label / BaseField の基礎色）
+ *   3. レイアウト共通クラス（.view-container / .screen-root / .menu-*）
+ *   4. タイポグラフィ（.title / .heading / .body-text / .small-text ほか）
+ *   5. コントロール（Button）の通常・:hover・:focus・:active・:disabled
+ *      （TextField / Dropdown / Toggle / Foldout / ScrollView は theme-controls.uss、#189 レビュー M-2）
+ *
+ *   画面（View）ごとのスタイルは画面ドメインごとに theme-views-misc.uss / theme-views-game.uss /
+ *   theme-views-lobby.uss / theme-views-editor.uss の 4 本へ分けてある（1 ファイルを 800 行以内に
+ *   保つため。CLAUDE.md「コーディング規約の要点」）。読み込み順は tsumugi-theme.tss と各 UXML の
+ *   <Style> の並び（theme.uss → theme-controls → theme-views-misc → -game → -lobby → -editor）で決まる。
+ *
+ * 適用のされ方（#105 / #113 / #132 で判明した重要な前提）
+ *   - :root のカスタムプロパティは PanelSettings の Theme Style Sheet（tsumugi-theme.tss）経由で
+ *     パネルの実ルートに適用される。各 UXML の <Style src="..."> だけでは TemplateContainer 越しに
+ *     継承されないことがある（#105）
+ *   - tsumugi-theme.tss は `unity-theme://default`（Unity 既定ランタイムテーマ）を先に import する。
+ *     既定テーマは `.unity-button` のような **クラスセレクタ**でコントロールを塗るため、
+ *     こちら側を `Button` のような**型セレクタ**で書くと詳細度（0,0,1 < 0,1,0）で負けて一切効かない。
+ *     実際、#132 以前は `Button { background-color: var(--color-primary); }` が既定テーマの
+ *     `.unity-button` に負けており、ボタンは Unity 既定のグレーのままだった
+ *     （docs/images/screenshot-title.png の旧スクリーンショットで確認）。
+ *     そのため本ファイルでは **`.unity-*` のクラスセレクタで上書きする**。同詳細度の場合は
+ *     後から読み込まれる本ファイル側が勝つ。
+ *   - 画面固有のボタン（.game-buzz-button など）は `.unity-button.<クラス>`（0,2,0）と書き、
+ *     読み込み順に依存せず基本スタイルに勝つようにする
+ */
+
+/* ============================================================================
+   1. デザイントークン
+   ============================================================================
+
+   配色は春日部つむぎ公式素材（ロゴ・立ち絵 v1.1.1 / v2.0）から抽出した色を基にしている。
+   抽出は `pwsh ./scripts/extract-palette.ps1`（System.Drawing で量子化 + k-means）で再現できる。
+   抽出結果と採用理由は docs/architecture.md「UI（UI Toolkit）」§テーマ配色 を参照。
+
+   素材由来の主な色（実測値）
+     #e4ac15  ロゴの金（34.2%）            → ブランド色（--color-primary、ボタンの地）
+     #b57229  立ち絵 v2.0 のジャケット（26.2%）→ 金を暗く寄せた文字色の下地（--color-primary-text）
+     #fcecdf  肌のハイライト（27.0%）       → 面（--color-background / --color-surface）
+     #f8eee5  白フチ（v1.1.1、20.4%）       → 同上
+     #e0d7cc  髪のハイライト（15.3%）        → インセット・一覧行（--color-surface-alt）
+     #2c2320  線画・黒インナー（5.4%）      → 本文（--color-text）
+     #564a48  制服の陰（v1.1.1、8.4%）      → 補助テキストの下地
+     #4fa5c2  瞳・ロゴの青（1.4%）          → 情報・アクセント（明るい地に合わせて暗く寄せる）
+     #e4427b  ロゴの差し色マゼンタ（2.1%）   → エラー・破壊的操作の系統
+
+   明暗の判断（ユーザー決定、2026-09-18）: **ライト基調（案 B）を既定**にする。
+   立ち絵・ロゴから受ける春日部つむぎの印象は「活発」であり、暗い地に金（オレンジ系）を敷くと
+   雰囲気が合わない（ユーザーの言葉: 「ダーク基調のオレンジ系＋黒はアダルトサイトのデザインに
+   似てしまうので避けたい。春日部つむぎのイメージも活発なイメージなのでライト基調にしたい」）。
+   地は立ち絵の肌のハイライト（#fcecdf）由来のクリーム、文字は線画の墨色（#2c2320）。
+
+   金 #e4ac15 の扱いに注意: 金は明るいので、**白系の面の上では文字色として使えない**
+   （#e4ac15 on #fffaf4 = 1.71:1）。そのため
+     - ボタンの「地」としては使う（金の上に墨色の文字 = 7.46:1）
+     - 面の上に「文字」として置く場合は、金を暗く寄せた --color-primary-text（#6f5410、6.85:1）を使う
+   と用途でトークンを分けている。
+
+   ダーク基調（案 A）のトークン値は docs/architecture.md §10.5 に併記してあり、
+   この :root ブロックを差し替えるだけで切り替えられる。
+   ============================================================================ */
+
+:root {
+    /* --- 面（背景・パネル・入力欄） --- */
+    --color-background: #f6ece2;
+    --color-surface: #fffaf4;
+    --color-surface-alt: #f0e2d4;
+    --color-surface-hover: #e6d5c4;
+    --color-input: #ffffff;
+    --color-input-focus: #fff8ec;
+    --color-border: #8d7768;
+    --color-divider: #d8c6b5;
+    /* 切断中の行など「生きていない情報」の地（#132 レビュー M-3。opacity を下げる代わりに使う）。 */
+    --color-surface-dim: #e8dacb;
+
+    /* --- ブランド（金） --- */
+    --color-primary: #e4ac15;
+    --color-primary-hover: #f3c64a;
+    --color-primary-active: #c08f0b;
+    --color-on-primary: #2c2320;
+    /* 面の上に「文字として」置くブランド色（参加コード・順位バッジ）。ライト基調に差し替えるときは
+       金そのままでは地とのコントラストが取れないため、独立したトークンにしてある。 */
+    --color-primary-text: #6f5410;
+
+    /* --- 文字 --- */
+    --color-text: #2c2320;
+    --color-text-muted: #6b5a50;
+
+    /* --- 状態色 --- */
+    --color-accent: #1b6480;
+    --color-success: #2a7348;
+    --color-on-success: #fcecdf;
+    --color-error: #b62e56;
+    --color-error-hover: #c1355f;
+    --color-error-active: #8f2342;
+    --color-on-error: #fcecdf;
+    --color-error-text: #a3264b;
+    --color-warning: #8a5a00;
+    --color-disabled: #ded0c2;
+    --color-on-disabled: #7a6a60;
+
+    /* --- 立ち絵ティント（#192） ---
+       character-image（UI Toolkit の Image）に --unity-image-tint-color 経由で適用する。
+       Image.tintColor はテクスチャの画素に乗算されるだけなので、乗算で「明るくする」ことはできない
+       （白 #ffffff を掛けても変化しない。1.0 を超える値は指定できない）。そのため：
+       - 正解はごく弱い暖色を乗算する程度に留める（強く光らせる演出はできない。
+         ○ マーク・表情差分（#86）で「正解」を示す主役はそちら）。
+       - 不正解は灰色を乗算してはっきり沈める。
+       旧実装（#24/#132）は立ち絵の枠全体を覆う矩形オーバーレイ（character-tint-overlay）で
+       半透明色を重ねていたが、画像の透明部分・余白にも色がかかってしまう不具合があった（#192）。
+       ティントは画像の画素への乗算なので、ライト / ダークのどちらの基調でも同じ値を使う
+       （基調に依存しない。docs/architecture.md §10.5）。
+       --color-character-tint-none は無着色（白を掛けても色は変わらない）。セレクタ側に
+       リテラルの #ffffff を書かないためのトークン（#196 レビュー L、§10.5「色はトークンに集約」）。 */
+    --color-character-tint-none: #ffffff;
+    --color-character-tint-correct: #fff4d6;
+    --color-character-tint-wrong: #9a9a9a;
+
+    /* --- 立ち絵の枠（#191） ---
+       バストアップの立ち絵を載せるカードの地。瞳・ロゴの青（#4fa5c2）をごく淡くした色で、
+       クリーム系の地（--color-background）と髪（明るいベージュ）の両方から立ち絵を浮かせる。
+       枠線は金（--color-primary）、影の代わりに下辺だけ太く暗い金（--color-primary-active）にする
+       （UI Toolkit の USS には box-shadow が無いため）。ダーク基調の値は docs/architecture.md §10.5。 */
+    --color-character-frame: #e4f1f5;
+
+    /* --- フォーカスリング（#174、ユーザー承認済み 2026-09-30） ---
+       #132 時点では明るい面の上を暗く寄せた金（#8a6a12）にしていたが、通常時の枠
+       --color-border（#8d7768）との差が 1.20:1 しかなく、キーボード操作でフォーカスが
+       当たっているボタンを見分けにくかった（#174 実測）。WCAG 2.2 の 2.4.13 Focus
+       Appearance（AAA）が求める「フォーカス前後の同じ画素で 3:1 以上」を満たすため、
+       本文と同じ墨色 --color-text（#2c2320）を流用する（--color-border との比は 3.63:1、
+       ダーク基調の --color-border #8a7972 に対しても --color-text #fcecdf で 3.60:1）。
+       金のボタン（.button-primary / 早押しボタン / 選択中タブ）は地が常に金 #e4ac15 の
+       ままなので、暗い墨色でなければ地の上で沈んでしまう。そのため --color-focus-ring-on-primary
+       だけは基調に関わらず暗い値に固定した。
+
+       主要ボタン（.button-primary）・危険ボタン（.button-danger）は**両方とも**、通常時の枠を
+       --color-border に統一した（旧: 主要が --color-primary-text、危険が --color-error-active）。
+       旧トークンのままでは新しい第 3 の条件（フォーカス色との差 3:1 以上）を満たせなかったため
+       である。旧 --color-primary-text（輝度 0.10）は、変更前は地の金（輝度 0.46）に対して
+       3.46:1、ページの地（輝度 0.85）に対して 6.10:1 とどちらも 3:1 以上を満たしていたが、
+       フォーカス色（暗い墨色、輝度 0.02）との差は 2.16:1 しかなく、3 つ目の条件だけを
+       満たせなかった。輝度が近い 2 点（0.10 と 0.02）の間でこれ以上差を広げる余地が無いため、
+       通常時の枠のほうを --color-border（輝度 0.20）に寄せて余地を作った（フォーカス色との
+       差は 3.63:1 まで広がる）。危険ボタンの旧 --color-error-active（輝度 0.07）も同様に、
+       フォーカス色（新しい暗い墨色 #2c2320）との差が 1.82:1 にしかならず
+       （#132 時点の明るい金のフォーカスリングに対してすら 1.67:1 だった）、同じ理由で
+       --color-border に統一した。
+
+       この統一により、危険ボタンの通常時の枠（--color-border）は自分自身の地（--color-error、
+       輝度 0.13）に対して 1.41:1 と低いままになる（旧 --color-error-active でも変更前から
+       同程度の 1.41:1 で、この統一による悪化ではない）。ページの地（--color-background）に
+       対しては 3.62:1 を保っており、WCAG 1.4.11 が本来求める「ページに対する部品の境界の
+       可視性」は満たしていると判断した（部品自身の内側の地に対する可視性までは必須要件でない
+       と判断。#174、ユーザー承認済み 2026-09-30）。同様に、危険ボタンのフォーカス枠
+       （#2c2320）と自分自身の地（--color-error）との比は 2.57:1 で 3:1 を割るが、
+       これも同じ理由で対象外とする（§10.6 参照）。 */
+    --color-focus-ring: #2c2320;
+    --color-focus-ring-on-primary: #2c2320;
+
+    /* テキスト選択の反転色（#132 レビュー M-1）。地の文字を透かして読ませるため、
+       ここだけ半透明（ブランド色の 35%）。ライト基調（案 B）でも同じ値でよい。 */
+    --color-selection: rgba(228, 172, 21, 0.35);
+
+    /* --- フォントサイズ --- */
+    --font-size-title: 40px;
+    --font-size-heading: 24px;
+    --font-size-subheading: 20px;
+    --font-size-base: 18px;
+    --font-size-small: 15px;
+
+    /* --- 余白 --- */
+    --spacing-xs: 4px;
+    --spacing-s: 8px;
+    --spacing-m: 16px;
+    --spacing-l: 32px;
+
+    /* --- 角丸 --- */
+    --radius-s: 4px;
+    --radius-m: 8px;
+    --radius-l: 14px;
+
+    /* 日本語フォント（Noto Sans JP Regular、SIL OFL 1.1。docs/licenses.md §13 参照）。
+       FontAsset を PanelSettings のテーマ経由でパネルルートに適用し、全 View に継承させる。 */
+    -unity-font-definition: url("../Fonts/notosansjp-regular-sdf.asset");
+}
+
+/* ============================================================================
+   2. Unity 既定ランタイムテーマの打ち消し
+   ============================================================================
+   既定テーマは Label / BaseField のラベルを独自のグレーで塗る。本テーマの本文色
+   （--color-text）と食い違って画面ごとに濃さがばらつくため、ここで基礎色だけ先に上書きする。
+   タイポグラフィ用のユーティリティクラス（.body-text / .small-text など）は §4 で後に
+   定義しており、同詳細度なら後勝ちで上書きされる。
+   ============================================================================ */
+
+.unity-label {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+}
+
+/* TextField / IntegerField / FloatField / DropdownField / Toggle 共通のラベル。
+   min-width: 200px の根拠（#132 レビュー L-5）: 既定テーマのラベルは min-width: 120px で、
+   設定画面の日本語ラベル（例「出題する問題セットID（カンマ区切り、空欄で全セット）」= 全角 27 字）が
+   毎行折り返して縦に伸びていた。--font-size-base: 18px のとき全角 1 字はおよそ 18px なので、
+   200px はおおむね全角 11 字ぶん。これ以上広げると入力欄が痩せるため、折り返し許容
+   （white-space: normal）との組み合わせでこの値にしている。
+   #189: 幅が中身任せだったため長いラベルは折り返さずに横へ伸び、入力欄を押し縮めていた（実測: 論理
+   1290x1075 で出題セットID欄が 199px）。行ごとに入力欄の左端もずれていた。
+   ラベルは行幅の 50% の列に固定し（最小 200px・最大 360px）、超える文言だけ折り返す。設定画面・ホスト設定の
+   パネル（最大幅 720px）では約 338px = 全角 18 字ぶん。これより長いラベルは、末尾の 1〜2 字だけが次の行に
+   落ちないよう UXML 側で括弧の前などに改行を入れてある（論理 px で固定の幅なので、倍率が変わっても同じ位置で折り返す）。 */
+.unity-base-field__label {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    white-space: normal;
+    width: 50%;
+    min-width: 200px;
+    max-width: 360px;
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
+/* #189: トグルは文言の直後にチェックボックスを置く（列に固定すると、横幅いっぱいのロビーや中央寄せの
+   利用規約画面でチェックボックスが文言から離れる）。幅は中身どおりにする。狭い枠で入りきらないときの保険として
+   縮めて折り返せるようにはしてあるが、設定・ホスト設定の静的な文言はトグルも含めて自動では折り返させず、
+   改行が要る位置には明示改行を入れる（docs/architecture.md §10.10。PlayMode テストで検証している）。 */
+.unity-toggle > .unity-base-field__label {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    flex-shrink: 1;
+}
+
+/* #189 レビュー L-8: RadioButtonGroup（問題エディタの「正解」）は既定テーマの左右余白で、同じ列の
+   TextField とラベルの左端がずれる。ドロップダウン（theme-controls.uss）と同じく余白をそろえる。 */
+.unity-radio-button-group {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* #189: ラベルが 2 行に折り返すと、既定（align-items: stretch）では 1 行ぶんの入力欄が
+   ラベルの高さまで縦に引き伸ばされていた。ラベルと入力欄を縦方向の中央でそろえる。 */
+.unity-base-text-field,
+.unity-base-popup-field {
+    align-items: center;
+}
+
+.unity-base-field:disabled .unity-base-field__label {
+    color: var(--color-on-disabled);
+}
+
+/* ============================================================================
+   3. レイアウト共通クラス
+   ============================================================================ */
+
+/* #105: ViewRouter.SwapTo() が VisualTreeAsset.Instantiate() で生成し、
+   Document.rootVisualElement 直下に追加する TemplateContainer に付与するクラス。
+   Instantiate() が返す TemplateContainer は既定では中身に合わせて縮む（flex-grow: 0 で高さが
+   auto）ため、各 View 側のルート要素（.screen-root 等）が flex-grow: 1 を持っていても、
+   その親である TemplateContainer 自体がウィンドウ高まで伸びず、結果として UI パネルがウィンドウ
+   上部の一部にしか収まらなかった（#105 の症状）。ViewRouter だけが付与するクラスなので、
+   theme.uss を個別に読み込む入れ子テンプレート（character-view.uxml・moderator-controls.uxml）
+   の TemplateContainer には影響しない。 */
+.view-container {
+    flex-grow: 1;
+    width: 100%;
+}
+
+/* 画面全体のルート要素に付けるクラス。各 View の最上位要素に付与する。 */
+.screen-root {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-background);
+    padding: var(--spacing-l);
+}
+
+/* 縦に並ぶボタン群のコンテナ */
+.menu-column {
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: stretch;
+    width: 360px;
+}
+
+.menu-row {
+    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    max-width: 720px;
+    /* #132 撮影時に発見: Lobby / Result のように子を stretch で並べる親の中では、幅 720px の行が
+       左に寄って見えた（ボタン群が画面の左寄りに出る）。行そのものを中央に置く。 */
+    align-self: center;
+}
+
+.menu-row .unity-button {
+    margin: var(--spacing-s);
+}
+
+/* ============================================================================
+   4. タイポグラフィ
+   ============================================================================ */
+
+/* #132: .screen-root は縦方向の flex コンテナ。既定の flex-shrink: 1 のままだと、
+   ウィンドウが低いときに見出し・注記・ボタン行まで一緒に縮んで文字やボタンが欠ける
+   （900x750 で利用規約の「同意して進む」や設定のタブ行が切れていた）。固定高の要素は
+   flex-shrink: 0 にして、足りない分は ScrollView（flex-shrink: 1 / min-height: 0）だけが
+   吸収するようにする。 */
+.title {
+    flex-shrink: 0;
+    font-size: var(--font-size-title);
+    color: var(--color-text);
+    -unity-font-style: bold;
+    margin-bottom: var(--spacing-l);
+}
+
+.heading {
+    flex-shrink: 0;
+    font-size: var(--font-size-heading);
+    color: var(--color-text);
+    -unity-font-style: bold;
+    margin-bottom: var(--spacing-s);
+}
+
+.body-text {
+    flex-shrink: 0;
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    white-space: normal;
+    margin-bottom: var(--spacing-m);
+}
+
+.small-text {
+    flex-shrink: 0;
+    font-size: var(--font-size-small);
+    color: var(--color-text-muted);
+}
+
+/* 進行状況・接続状態などの情報系メッセージ（#132 レビュー M-5）。
+   エラー（.error-text）・警告（--color-warning）と区別がつくようアクセント色にする。
+   class="body-text status-text" / class="small-text status-text" のように併用する。 */
+.status-text {
+    color: var(--color-accent);
+}
+
+/* #113: .small-text は他画面でも短い1行の文言に使われており、既定では折り返さない。
+   判断基準（#120）: 動的なメッセージ、または全角30字を超える注記など、横に切れうる
+   長文の Label にだけ class="small-text small-text-wrap" のように併用する
+   （host-setup-view.uxml の Tailscale 案内 Label、settings-view.uxml の先読み数注記など）。 */
+.small-text-wrap {
+    white-space: normal;
+}
+
+/* Join View（参加コード入力画面）のエラー表示・接続状況表示。既定では非表示（display: none）で、
+   コントローラ側が文言をセットしたときだけ表示する（terms-status-label と同じ運用）。 */
+.error-text {
+    font-size: var(--font-size-small);
+    color: var(--color-error-text);
+    white-space: normal;
+    margin-bottom: var(--spacing-s);
+    display: none;
+}
+
+/* ============================================================================
+   5. コントロール
+   ============================================================================ */
+
+/* ---- Button ----------------------------------------------------------------
+   既定のボタンは「中立（面の色）」。画面の主要導線だけ .button-primary（金）にして
+   視線の優先順位を作る。破壊的操作の確認ボタンは .button-danger。
+
+   すべてのボタンに最初から 3px のボーダーを持たせておき、:focus で色を変えるだけにする
+   （#174 で 2px → 3px。フォーカス時だけ太くするとレイアウトが動く（UI Toolkit のボーダーは
+   内側に描かれ、コンテンツ幅が縮む）ため、全状態で同じ太さにする。これにより通常⇔ホバー⇔
+   フォーカス⇔アクティブの間でボタンの見かけの大きさは変わらない）。
+   ボーダーは透明ではなく --color-border で常時見せる（#132）。ライト基調では中立ボタンの地
+   （--color-surface-alt）と画面の地（--color-background）の差が 1.09:1 しかなく、枠が無いと
+   「押せる場所」に見えない（WCAG 1.4.11 は UI 部品の境界に 3:1 を求めている）。
+   --------------------------------------------------------------------------- */
+.unity-button {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    border-width: 3px;
+    border-color: var(--color-border);
+    border-radius: var(--radius-m);
+    padding: 8px 20px;
+    margin: var(--spacing-s) 0;
+    min-height: 44px;
+    -unity-text-align: middle-center;
+    transition-property: background-color, border-color, scale;
+    transition-duration: 0.09s;
+    transition-timing-function: ease-out;
+}
+
+/* #132 撮影時の実測: 既定テーマは中立ボタンの :hover / :active を 0,3,0 相当の規則
+   （クラス + 疑似クラス 2 つ。`:enabled` を含むとみられる）で塗っており、0,2,0 の
+   `.unity-button:hover` / `.unity-button:active` では既定のグレー（#d1d1d1 / #959595、枠 #808080）の
+   ままだった（PlayMode テスト ButtonStateStyleTests と、ビルドのスクリーンショットの両方で確認）。
+   そのため各状態に `:enabled` を足した 0,3,0 の規則を並べる。:hover は既定テーマが枠色も
+   変えるので、枠も明示する。並び順は hover → focus → active（同詳細度は後勝ち。
+   ホバー中にフォーカスしていればフォーカスリングを優先する）。 */
+.unity-button:hover,
+.unity-button:hover:enabled {
+    background-color: var(--color-surface-hover);
+    border-color: var(--color-border);
+}
+
+/* フォーカスも同様（実測: 0,2,0 では既定の青 #006aa6 のままだった）。 */
+.unity-button:focus,
+.unity-button:focus:enabled {
+    border-color: var(--color-focus-ring);
+}
+
+.unity-button:active,
+.unity-button:active:enabled {
+    background-color: var(--color-surface);
+    scale: 0.97 0.97;
+}
+
+.unity-button:disabled {
+    background-color: var(--color-disabled);
+    color: var(--color-on-disabled);
+    border-color: var(--color-divider);
+    opacity: 1;
+}
+
+/* 主要導線（ホストとして開始 / 参加する / ゲーム開始 / 同意して進む など）。
+   金 #e4ac15 の上に置く文字は墨色（--color-on-primary = #2c2320、7.46:1）にする。
+   白系の文字だと 1.78:1 しか出ない。 */
+.unity-button.button-primary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    /* #174: 通常時の枠は中立ボタンと同じ --color-border に統一した（旧: --color-primary-text）。
+       --color-primary-text（輝度 0.10）のままだと、地の金（輝度 0.46）にも 3:1 保ちつつ
+       フォーカス色（暗い墨色）とも 3:1 差をつける枠色が存在しない（両者の輝度差が小さすぎる）。
+       --color-border（輝度 0.20）に寄せることで、フォーカス時の墨色（輝度 0.02）との差を
+       3.64:1 まで広げられる。 */
+    border-color: var(--color-border);
+    -unity-font-style: bold;
+}
+
+.unity-button.button-primary:hover {
+    background-color: var(--color-primary-hover);
+    /* 中立の :hover:enabled（0,3,0）も同じ --color-border にするが、読み込み順に依存しないよう明示する。 */
+    border-color: var(--color-border);
+}
+
+.unity-button.button-primary:focus {
+    border-color: var(--color-focus-ring-on-primary);
+}
+
+.unity-button.button-primary:active {
+    background-color: var(--color-primary-active);
+    scale: 0.97 0.97;
+}
+
+.unity-button.button-primary:disabled {
+    background-color: var(--color-disabled);
+    color: var(--color-on-disabled);
+    border-color: var(--color-divider);
+}
+
+/* 取り消せない操作（削除する / 退出する / 同意を撤回）。 */
+.unity-button.button-danger {
+    background-color: var(--color-error);
+    color: var(--color-on-error);
+    /* #174: 通常時の枠は中立ボタンと同じ --color-border に統一した（旧: --color-error-active）。
+       --color-error-active（輝度 0.07）のままだと、フォーカス色（暗い墨色、輝度 0.02）との差が
+       1.67:1 までしか出ない（どちらも暗すぎて 3:1 分の余地がない）。 */
+    border-color: var(--color-border);
+}
+
+.unity-button.button-danger:hover {
+    background-color: var(--color-error-hover);
+    border-color: var(--color-border);
+}
+
+.unity-button.button-danger:focus {
+    border-color: var(--color-focus-ring);
+}
+
+.unity-button.button-danger:active {
+    background-color: var(--color-error-active);
+    scale: 0.97 0.97;
+}
+
+.unity-button.button-danger:disabled {
+    background-color: var(--color-disabled);
+    color: var(--color-on-disabled);
+    border-color: var(--color-divider);
+}

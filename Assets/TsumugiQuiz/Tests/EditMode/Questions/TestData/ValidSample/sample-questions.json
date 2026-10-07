@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "setId": "sample-set-01",
+  "title": "サンプル問題セット",
+  "description": "question-data.md 用のサンプル。自由入力・選択式・画像付きを各1問ずつ収録。画像付きの問題の画像は Resources/Questions/sample-image.bytes に同梱している。",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "freeText",
+      "text": "日本の首都はどこ？",
+      "readingText": "日本の首都はどこでしょう？",
+      "answers": ["東京", "とうきょう", "Tokyo"],
+      "tags": ["地理", "日本"],
+      "difficulty": 1
+    },
+    {
+      "id": "q2",
+      "type": "choice",
+      "text": "次のうち、VOICEVOXのキャラクターはどれ？",
+      "readingText": "次のうち、ボイスボックスのキャラクターはどれでしょう？",
+      "choices": ["春日部つむぎ", "初音ミク", "洛天依", "IA"],
+      "correctIndex": 0,
+      "tags": ["VOICEVOX"],
+      "difficulty": 2
+    },
+    {
+      "id": "q3",
+      "type": "freeText",
+      "text": "この画像に写っている動物は？",
+      "readingText": "この画像に写っている動物は何でしょう？",
+      "answers": ["ねこ", "猫", "cat"],
+      "imagePath": "images/sample.png",
+      "tags": ["画像問題"],
+      "difficulty": 1
+    }
+  ]
+}

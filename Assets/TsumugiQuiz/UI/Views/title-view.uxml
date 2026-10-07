@@ -1,0 +1,22 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="title-root" class="screen-root">
+        <ui:Label name="title-label" text="つむぎクイズ" class="title" />
+        <ui:VisualElement name="title-menu" class="menu-column">
+            <ui:Button name="host-button" class="button-primary" text="ホストとして開始" />
+            <ui:Button name="join-button" class="button-primary" text="参加コードで参加" />
+            <ui:Button name="question-editor-button" text="問題エディタ" />
+            <ui:Button name="settings-button" text="設定" />
+            <ui:Button name="credits-button" text="クレジット" />
+        </ui:VisualElement>
+        <!-- #148: Tab のフォーカス順は視覚ツリーの深さ優先順（UI Toolkit マニュアル「Focus order of elements」）。
+             主要導線（ホストとして開始 → … → クレジット）を先にし、右上の読み上げ状態ボタンを最後にするため
+             メニューの後ろに置く。位置は .tts-status-corner の position: absolute で決まるため、並び順は見た目に影響しない。 -->
+        <ui:Button name="tts-status-button" text="読み上げ: 未確認" class="tts-status-corner" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-image-missing",
+  "title": "画像不存在テスト",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"], "imagePath": "images/does-not-exist.png" }
+  ]
+}

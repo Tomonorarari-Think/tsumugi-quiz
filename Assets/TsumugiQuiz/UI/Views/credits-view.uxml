@@ -1,0 +1,41 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="credits-root" class="screen-root credits-root">
+        <ui:Label name="credits-heading" text="クレジット" class="heading" />
+        <ui:ScrollView name="credits-scroll-view" class="credits-scroll-view">
+            <ui:VisualElement name="credits-character-heading-row">
+                <ui:Label text="1. キャラクター" class="credits-section-title" />
+            </ui:VisualElement>
+            <ui:VisualElement name="credits-character-section" />
+
+            <ui:VisualElement name="credits-voice-heading-row">
+                <ui:Label text="2. 音声" class="credits-section-title" />
+            </ui:VisualElement>
+            <ui:VisualElement name="credits-voice-section" />
+
+            <ui:VisualElement name="credits-oss-heading-row">
+                <ui:Label text="3. OSS" class="credits-section-title" />
+            </ui:VisualElement>
+            <ui:VisualElement name="credits-oss-section" />
+
+            <ui:VisualElement name="credits-consent-section">
+                <ui:Label text="同意状況" class="credits-section-title" />
+                <ui:Label name="credits-consent-status" text="" class="body-text credits-consent-status" />
+                <ui:VisualElement name="credits-consent-actions" class="menu-row">
+                    <ui:Button name="terms-button" text="利用規約の確認・撤回" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="credits-app-info-section">
+                <ui:Label text="アプリ情報" class="credits-section-title" />
+                <ui:Label name="credits-app-version" text="" class="small-text" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+        <ui:Button name="back-button" text="戻る" />
+    </ui:VisualElement>
+</ui:UXML>

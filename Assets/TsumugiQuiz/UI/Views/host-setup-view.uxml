@@ -1,0 +1,87 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <ui:VisualElement name="host-setup-root" class="screen-root host-setup-root">
+        <ui:Label name="host-setup-heading" text="ホストの設定" class="heading" />
+
+        <ui:ScrollView name="host-setup-scroll-view" class="host-setup-scroll-view">
+            <ui:VisualElement name="setup-form" class="host-setup-panel">
+                <ui:TextField name="player-name-field" label="プレイヤー名" max-length="16" />
+                <ui:Toggle name="host-only-toggle" label="司会専任（自分はプレイヤーとして参加しない）" />
+                <ui:IntegerField name="port-field" label="ポート番号（既定 7777。&#10;0 で空きポートを自動選択）" />
+                <ui:Button name="start-host-button" class="button-primary" text="ホストを開始" />
+                <ui:Label name="host-status-label" text="" class="small-text small-text-wrap status-text" style="display: none;" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="connectivity-section" class="host-setup-panel" style="display: none;">
+                <ui:Label text="参加コード" class="terms-section-heading" />
+
+                <ui:VisualElement class="join-code-row">
+                    <ui:Label text="インターネット用" class="small-text" />
+                    <ui:Label name="internet-code-label" text="" class="join-code-label" />
+                    <ui:Button name="copy-internet-code-button" text="コピー" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="join-code-row">
+                    <ui:Label text="LAN 用" class="small-text" />
+                    <ui:Label name="lan-code-label" text="" class="join-code-label" />
+                    <ui:Button name="copy-lan-code-button" text="コピー" />
+                </ui:VisualElement>
+
+                <ui:Label name="join-code-invalidated-label" text="" class="small-text host-setup-warning" style="display: none;" />
+
+                <ui:Label name="port-mapping-status-label" text="" class="small-text small-text-wrap status-text" />
+                <ui:Label name="public-ip-source-label" text="" class="small-text small-text-wrap" />
+
+                <ui:VisualElement name="warnings-container" class="host-setup-warnings" />
+
+                <ui:VisualElement name="manual-guide-container" class="host-setup-panel-inset" style="display: none;">
+                    <ui:Label text="自動ポート開放に失敗しました。&#10;ルーターの設定画面で次のポートを開放してください。" class="body-text" />
+                    <ui:VisualElement name="manual-guide-rows-container" />
+                    <ui:VisualElement class="menu-row">
+                        <ui:Button name="copy-lan-ip-in-guide-button" text="LAN IP をコピー" />
+                        <ui:Button name="retry-port-mapping-button" text="再試行" />
+                    </ui:VisualElement>
+                    <ui:Label text="ルーターの設定方法がわからない場合は、&#10;Tailscale の利用も検討してください（README 参照）。&#10;UPnP もポート開放も不要になります。" class="small-text small-text-wrap" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="manual-ip-section" class="host-setup-panel-inset" style="display: none;">
+                    <ui:Label text="グローバル IP を手入力する（Tailscale の IP アドレスも指定できます）" class="body-text" />
+                    <ui:VisualElement class="menu-row">
+                        <ui:TextField name="manual-ip-field" class="manual-ip-field" />
+                        <ui:Button name="apply-manual-ip-button" text="コードを作る" />
+                    </ui:VisualElement>
+                    <ui:Label name="manual-ip-error-label" text="" class="error-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="question-section" class="host-setup-panel">
+                <ui:Label text="問題データ" class="terms-section-heading" />
+                <ui:Label name="question-summary-label" text="" class="body-text" />
+                <ui:VisualElement name="question-issues-container" class="host-setup-warnings" />
+                <ui:Label name="question-status-label" text="" class="error-text" />
+                <ui:VisualElement class="menu-row">
+                    <ui:Button name="reload-questions-button" text="再読込" />
+                    <ui:Button name="open-question-folder-button" text="フォルダを開く" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:ScrollView>
+
+        <ui:VisualElement name="back-confirm-container" class="host-setup-panel-inset host-setup-back-confirm" style="display: none;">
+            <ui:Label text="ホストを停止して戻りますか？参加者は切断されます。" class="body-text" />
+            <ui:VisualElement class="menu-row">
+                <ui:Button name="confirm-back-button" text="はい、戻る" />
+                <ui:Button name="cancel-back-button" text="キャンセル" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="host-setup-actions" class="menu-row">
+            <ui:Button name="lobby-button" class="button-primary" text="ロビーへ" />
+            <ui:Button name="back-button" text="戻る" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

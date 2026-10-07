@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-mixed-valid",
+  "title": "混在フォルダ・正常セット",
+  "questions": [
+    { "id": "q1", "type": "freeText", "text": "問題", "answers": ["a"] }
+  ]
+}

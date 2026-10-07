@@ -1,0 +1,16 @@
+{
+    "name": "TsumugiQuiz.Room",
+    "rootNamespace": "TsumugiQuiz.Room",
+    "references": [
+        "TsumugiQuiz.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

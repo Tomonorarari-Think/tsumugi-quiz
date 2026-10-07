@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-duplicate-id",
+  "title": "重複IDテスト",
+  "questions": [
+    { "id": "dup", "type": "freeText", "text": "問題1", "answers": ["a"] },
+    { "id": "dup", "type": "freeText", "text": "問題2", "answers": ["b"] }
+  ]
+}

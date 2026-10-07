@@ -1,0 +1,21 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Styles/theme.uss" />
+    <Style src="../Styles/theme-controls.uss" />
+    <Style src="../Styles/theme-views-misc.uss" />
+    <Style src="../Styles/theme-views-game.uss" />
+    <Style src="../Styles/theme-views-lobby.uss" />
+    <Style src="../Styles/theme-views-editor.uss" />
+    <!-- 未配置・未同意のときは character-root ごと非表示にする（CharacterView.RefreshVisibility、レビュー H1）。
+         プレースホルダのシルエット枠・案内ラベルは表示しない（案内文言は CharacterImageLoader.NotPlacedMessage
+         としてログにのみ残す、レビュー L7）。 -->
+    <ui:VisualElement name="character-root" class="character-root" style="display: none;">
+        <ui:VisualElement name="character-image-frame" class="character-image-frame">
+            <!-- scale-mode="ScaleToFit"（レビュー M2）: 画像の縦横比を保ったままカードに収める。カード（character-image-frame）の
+                 縦横比は画像に合わせる（既定はバストアップ 0.771、CharacterView が読み込んだ画像の値で上書きする、#191）。 -->
+            <ui:Image name="character-image" class="character-image" scale-mode="ScaleToFit" />
+            <ui:VisualElement name="character-mark-correct" class="character-mark character-mark-correct" style="display: none;" />
+            <ui:VisualElement name="character-mark-wrong-a" class="character-mark character-mark-wrong-bar character-mark-wrong-bar--a" style="display: none;" />
+            <ui:VisualElement name="character-mark-wrong-b" class="character-mark character-mark-wrong-bar character-mark-wrong-bar--b" style="display: none;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

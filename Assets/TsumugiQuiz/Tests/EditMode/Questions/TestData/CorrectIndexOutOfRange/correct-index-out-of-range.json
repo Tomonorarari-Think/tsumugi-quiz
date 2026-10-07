@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "setId": "test-correct-index-out-of-range",
+  "title": "correctIndex範囲外テスト",
+  "questions": [
+    { "id": "q1", "type": "choice", "text": "問題", "choices": ["a", "b", "c"], "correctIndex": 5 }
+  ]
+}

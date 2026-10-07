@@ -1,0 +1,17 @@
+{
+    "name": "TsumugiQuiz.Tts",
+    "rootNamespace": "TsumugiQuiz.Tts",
+    "references": [
+        "TsumugiQuiz.Core",
+        "TsumugiQuiz.Questions"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

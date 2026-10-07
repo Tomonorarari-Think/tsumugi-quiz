@@ -1,0 +1,23 @@
+/*
+ * tsumugi-theme.tss — PanelSettings に設定する「テーマ」スタイルシート。
+ *
+ * theme.uss の `:root { --color-...: ...; }` は、USS のカスタムプロパティが
+ * 実際のパネルルート要素に対して定義されないと解決されない（各 View の UXML から
+ * `<Style src="theme.uss">` で読み込むだけでは、その UXML 自身のルート要素にしか
+ * 定義が乗らず、TemplateContainer 越しに他の階層へ正しく継承されないことがある）。
+ * このファイルを PanelSettings の Theme Style Sheet に設定することで、
+ * theme.uss の :root 定義がパネル全体の実ルートに適用されるようにする。
+ *
+ * import 順が重要（#132）: `unity-theme://default` を最初に読み込み、そのあとに theme.uss →
+ * theme-controls.uss（入力系コントロール、#189 レビュー M-2）→
+ * theme-views-*.uss（画面ドメインごとの分割、#132 レビュー M-4）の順で読み込む。
+ * 既定テーマは `.unity-button` のようなクラスセレクタで
+ * コントロールを塗るため、同じ詳細度で上書きするには後から読み込まれている必要がある。
+ */
+@import url("unity-theme://default");
+@import url("theme.uss");
+@import url("theme-controls.uss");
+@import url("theme-views-misc.uss");
+@import url("theme-views-game.uss");
+@import url("theme-views-lobby.uss");
+@import url("theme-views-editor.uss");

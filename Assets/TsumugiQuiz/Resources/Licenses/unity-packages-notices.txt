@@ -1,0 +1,41 @@
+出典: docs/licenses.md §9（Unity パッケージ、Unity Companion License）
+確認日: 2026-09-12（Packages/manifest.json 記載の実バージョンで各 URL の存在・ライセンス種別を
+      WebFetch で確認）
+補足: いずれも Unity Companion License が適用される（全文は unity-companion-license.txt を参照。
+      条項が長いため、パッケージ個別には全文転記ではなく LICENSE URL 参照とする方針。
+      docs/licenses.md §9 の同梱方針と同一）。
+
+---
+
+Unity Editor Software Terms（https://unity.com/legal/editor-terms-of-service/software ）
+Section 2.12「Proprietary Notices and Attribution」の要求、および Unity's Trademark Guidelines
+（https://unity.com/legal/branding-trademarks 、v.4.2）の「TRADEMARK NOTICE AND ATTRIBUTION
+STATEMENT」の要求により、以下の定型文を表示する（確認日 2026-09-17、docs/licenses.md §11、issue #100）。
+
+TsumugiQuiz was made with Unity®. Unity is a trademark or registered trademark of Unity Technologies
+Copyright © 2005-2026 Unity Technologies. All rights reserved.
+TsumugiQuiz is not sponsored by or affiliated with Unity Technologies or its affiliates. Unity is a trademark or registered trademark of Unity Technologies or its affiliates in the U.S. and elsewhere.
+
+---
+
+Unity と各パッケージ (C) Unity Technologies (Unity Companion License)
+
+対象パッケージ:
+
+- Netcode for GameObjects (com.unity.netcode.gameobjects) 2.13.2
+  https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.13/license/LICENSE.html
+- Unity Transport (com.unity.transport) 6.6.0
+  https://docs.unity3d.com/Packages/com.unity.transport@6.6/license/LICENSE.html
+  ※ 本アプリは、受信バッファ解放の不具合を修正するため 2 行を改変したものを同梱している
+    （改変部分の権利も Unity Companion License §3.2 に従う。詳細は docs/licenses.md §9.1、issue #163）。
+- Newtonsoft Json for Unity (com.unity.nuget.newtonsoft-json) 3.2.2
+  https://docs.unity3d.com/Packages/com.unity.nuget.newtonsoft-json@3.2/license/LICENSE.html
+- Input System (com.unity.inputsystem) 1.20.0
+  https://docs.unity3d.com/Packages/com.unity.inputsystem@1.20/license/LICENSE.html
+- Universal Render Pipeline (com.unity.render-pipelines.universal) 17.6.0
+  https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@17.6/license/LICENSE.html
+- Test Framework (com.unity.test-framework) 1.8.0
+  https://docs.unity3d.com/Packages/com.unity.test-framework@1.8/license/LICENSE.html
+
+ライセンス種別: Unity Companion License（全文は同梱の unity-companion-license.txt を参照。
+根拠: https://unity.com/legal/licenses/unity-companion-license ）
